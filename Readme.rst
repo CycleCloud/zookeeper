@@ -1,8 +1,9 @@
 CycleCloud ZooKeeper Sample Cluster
 ===================================
 
-The CycleCloud ZooKeeper sample demonstrates configuring and launching a basic Apache
-ZooKeeper ( https://zookeeper.apache.org/ ) cluster from CycleCloud.
+The CycleCloud ZooKeeper sample demonstrates configuring and launching a basic
+Apache ZooKeeper ( https://zookeeper.apache.org/ ) cluster from the CycleCloud
+GUI.
 
 
 Pre-Requisites
@@ -12,19 +13,24 @@ This sample requires the following:
 
   1. CycleCloud must be installed and running.
 
-     a. If this is not the case, see the CycleCloud QuickStart Guide for assistance.
+     a. If this is not the case, see the CycleCloud QuickStart Guide for
+        assistance.
 
   2. The CycleCloud CLI must be installed and configured for use.
 
   3. You must have access to log in to CycleCloud.
 
-  4. You must have access to upload data and launch instances in your chosen Cloud Provider account.
+  4. You must have access to upload data and launch instances in your chosen
+     Cloud Provider account.
 
-  5. You must have access to a configured CycleCloud "Locker" for Cluster-Init and Chef storage.
+  5. You must have access to a configured CycleCloud "Locker" for Cluster-Init
+     and Chef storage.
 
-  6. Optional: To use the deployment script, you must have Pogo installed and configured.
+  6. Optional: To use the deployment script, you must have Pogo installed and
+     configured.
 
-     a. You may use your preferred tool to interact with your storage "Locker" instead.
+     a. You may use your preferred tool to interact with your storage "Locker"
+        instead.
 
 
 **NOTE:**
@@ -45,8 +51,8 @@ To import the cluster:
 
   2. Switch to the ZooKeeper sample directory.
 
-  3. Run ``cyclecloud import_cluster -t ZooKeeper -f ./zookeeper.txt``.  The expected output looks
-     like this:::
+  3. Run ``cyclecloud import_cluster -t ZooKeeper -f ./zookeeper.txt``.  The
+     expected output looks like this:::
 
        $ cyclecloud import_cluster -t ZooKeeper -f ./zookeeper.txt
        Importing cluster zookeeper and creating cluster zookeeper as a template....
@@ -62,9 +68,18 @@ To import the cluster:
 B. Deploying the Custom Chef Cookbooks
 --------------------------------------
 
-  1. From the same terminal used to import the cluster, run the deploy script:::
+  1. Find the URL of your CycleCloud storage locker.   The example below uses a
+     fake AWS S3 bucket named: ``s3://EXAMPLE/``
 
-       
+  2. From the same terminal used to import the cluster, run the deploy script:::
+
+       $ ./deploy.sh s3://EXAMPLE/
+       Using locker: s3://EXAMPLE
+       Deploying custom cookbooks...
+       100% (0.03/0.03 MB) s3://EXAMPLE/chef/zookeeper/0.1/site-cookbooks.tgz
+       Deploying changes to cluster-init...
+       0% (0.00/0.00 MB) s3://EXAMPLE/cluster-init/zookeeper/0.1/scratch/scratch.txt
+       Deployment Complete.
 
 
 C. Creating a ZooKeeper Cluster
@@ -72,13 +87,15 @@ C. Creating a ZooKeeper Cluster
 
   1. Log in to your CycleCloud from your browser.
 
-  2. Click the **"Clusters"** to navigate to the CycleCloud "Clusters" page, if you are not already there.
+  2. Click the **"Clusters"** to navigate to the CycleCloud "Clusters" page, if
+     you are not already there.
 
   3. Click the **"+"** button in the "Clusters" frame to create a new cluster.
 
   4. In the cluster creation page, click on the **ZooKeeper** cluster icon.
 
-  5. At a minimum, select the Cloud Provider Credentials to use and enter a Name for the cluster.
+  5. At a minimum, select the Cloud Provider Credentials to use and enter a Name
+     for the cluster.
 
   6. Click the **"Start"** button.
 
@@ -86,12 +103,14 @@ C. Creating a ZooKeeper Cluster
 D. Starting and Stopping the ZooKeeper Cluster
 ----------------------------------------------
 
-  1. Select the newly created ZooKeeper cluster from the **Clusters** frame on the CycleCloud
-     "Clusters" page
+  1. Select the newly created ZooKeeper cluster from the **Clusters**
+     frame on the CycleCloud "Clusters" page
 
-  2. To start the cluster, click the **Start** link in the cluster status frame.
+  2. To start the cluster, click the **Start** link in the cluster status
+     frame.
      
-  3. Later, to stop a started cluster, click the **Terminate** link in the cluster status frame.
+  3. Later, to stop a started cluster, click the **Terminate** link in the
+     cluster status frame.
      
 
 
