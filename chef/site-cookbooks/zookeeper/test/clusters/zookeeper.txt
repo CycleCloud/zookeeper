@@ -1,0 +1,26 @@
+############################
+## Zookeeper Configuration File ##
+############################
+[cluster zookeeper]
+
+	[[node defaults]]
+
+	# CentOS 6.4 (pvm)
+	ImageId = ami-6db0c104
+
+	KeyPair = cyclecloud
+	KeyPairLocation = ~/.ssh/cyclecloud.pem
+        CommonChefRepoVersion = zookeeper
+        SecurityGroups = sg-9da5c3f6
+
+	[[nodearray ensemble]]
+	
+	MachineType = m1.large
+        Count = 5
+
+		[[[configuration]]]
+		run_list = recipe[zookeeper]
+                zookeeper.mode = ensemble
+                # quorum must match Count
+                zookeeper.quorum = 5
+                zookeeper.client_port = 2182

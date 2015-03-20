@@ -1,0 +1,12 @@
+site :opscode
+
+metadata
+cookbook 'thunderball', path: '../thunderball'
+cookbook 's3cmd', path: '../s3cmd'
+cookbook 'cvolume', path: '../cvolume'
+cookbook 'cyclecloud', path: '../cyclecloud'
+cookbook 'cinst', path: '../cinst'
+cookbook 'cycle-stunnel', path: '../cycle-stunnel'
+cookbook 'stunnel', path: '../stunnel'
+cookbook 'build-essential', path: '../build-essential'
+

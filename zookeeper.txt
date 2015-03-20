@@ -1,0 +1,120 @@
+##################################
+## Zookeeper Configuration File ##
+##################################
+
+[parameters Cloud Provider Account]
+    Order = 10
+    [[parameter credentials]]
+    Label = Credentials:
+    Description = The credentials for the cloud provider
+    ParameterType = Cloud.Credentials
+    
+    [[parameter keypair]]
+    Label = Key pair:
+    Description = The keypair to connect with
+    ParameterType = AWS.Keypair
+    DefaultValue = cyclecloud
+
+    [[parameter keypair_location]]
+    Label = Key pair location:
+    Description = The path to the keypair
+    DefaultValue = ~/.ssh/cyclecloud.pem
+
+[parameters Zookeeper]
+    Order = 20
+    
+    [[parameter zookeeper_description]]
+    HideLabel = true
+    Config.Plugin = pico.widget.HtmlTemplateWidget
+    Config.Template = "Adjust the ZooKeeper configuration options.<br/>Recommended only for advanced users."
+
+    [[parameter quorum_size]]
+    Label = Ensemble Size
+    Description = The min. number of live ZooKeeper ensemble members required to achieve quorum.
+    DefaultValue = 2
+    Config.Plugin = pico.form.NumberTextBox
+    Config.MinValue = 2
+    Config.MaxValue = 6
+    Config.IntegerOnly = true
+    
+    [[parameter ensemble_size]]
+    Label = Ensemble Size
+    Description = The number of ZooKeeper ensemble members to start initially.
+    DefaultValue = 2
+    Config.Plugin = pico.form.NumberTextBox
+    Config.MinValue = 2
+    Config.MaxValue = 10
+    Config.IntegerOnly = true
+    
+[parameters Networking]
+    Order = 30
+    
+    [[parameter proxy_description]]
+    HideLabel = true
+    Config.Plugin = pico.widget.HtmlTemplateWidget
+    Config.Template = "The proxy host may be used to enable firewall traversal between the cluster and CycleCloud.   In VPC environments with virtual network, this node is not required."
+
+    [[parameter proxy_machine_type]]
+    Label = Network Proxy MachineType
+    Description = The machine type for the optional proxy host
+    ParameterType = Cloud.MachineType
+    Config.Provider = AWS
+    DefaultValue = t2.micro
+
+[parameters Compute Backend]
+    Order = 40
+
+    [[parameter enable_termination_protection]]
+    Label = Termination Prot.?
+    DefaultValue = false
+    Widget.Plugin = pico.form.BooleanCheckBox
+    Widget.Label = Enable Termination for all instances?
+    
+    
+    [[parameter ensemble_machine_type]]
+    Label = ZooKeeper MachineType
+    Description = The machine type for the ZooKeeper members
+    ParameterType = Cloud.MachineType
+    Config.Provider = AWS
+    DefaultValue = m3.large
+    
+[cluster zookeeper]
+
+    # Autoscale for Zookeeper is out-of-scope for this example
+    # If required, please contact CycleComputing for additional support
+    Autoscale = false
+
+    [[node defaults]]
+    TerminationProtection = $enable_termination_protection
+    Image = Cycle CentOS 6
+
+    KeyPair = $keypair
+    KeyPairLocation = $keypair_location
+
+    BlackboardLocker = ${credentials}-blackboard
+    Credentials = $credentials
+    ChefRepoVersion = zookeeper/0.1
+
+    [[node proxy]]
+    IsReturnProxy = true
+    MachineType = $proxy_machine_type
+
+        [[[configuration]]]
+        run_list = recipe[cyclecloud]
+
+      
+    [[nodearray ensemble]]
+    MachineType = $ensemble_machine_type
+    InitialCount = ${ifThenElse(ensemble_size > quorum_size, ensemble_size, quorum_size)}
+
+        [[[configuration]]]
+        run_list = recipe[zookeeper]
+
+        cyclecloud.discoverable = true
+        zookeeper.mode = ensemble
+        zookeeper.client.discovery_mechanism = blackboard
+        # quorum must be less than or equal to Count
+        zookeeper.quorum = $quorum_size
+        zookeeper.client_port = 2182
+        zookeeper.ready = true
+
