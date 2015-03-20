@@ -22,6 +22,10 @@ This sample requires the following:
 
   5. You must have access to a configured CycleCloud "Locker" for Cluster-Init and Chef storage.
 
+  6. Optional: To use the deployment script, you must have Pogo installed and configured.
+
+     a. You may use your preferred tool to interact with your storage "Locker" instead.
+
 
 **NOTE:**
 ::
@@ -57,6 +61,10 @@ To import the cluster:
 
 B. Deploying the Custom Chef Cookbooks
 --------------------------------------
+
+  1. From the same terminal used to import the cluster, run the deploy script:::
+
+       
 
 
 C. Creating a ZooKeeper Cluster
