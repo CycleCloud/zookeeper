@@ -93,6 +93,7 @@
 
     BlackboardLocker = ${credentials}-blackboard
     Credentials = $credentials
+    ClusterInit = zookeeper/0.1
     ChefRepoVersion = zookeeper/0.1
 
     [[node proxy]]
