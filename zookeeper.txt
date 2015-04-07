@@ -83,6 +83,7 @@
     # Autoscale for Zookeeper is out-of-scope for this example
     # If required, please contact CycleComputing for additional support
     Autoscale = false
+    IconUrl = http://download.cyclecomputing.com/logos/zookeeper-192x192.png
 
     [[node defaults]]
     TerminationProtection = $enable_termination_protection
