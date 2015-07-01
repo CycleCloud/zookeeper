@@ -59,7 +59,7 @@
     Description = The machine type for the optional proxy host
     ParameterType = Cloud.MachineType
     Config.Provider = AWS
-    DefaultValue = t2.micro
+    DefaultValue = c3.large
 
 [parameters Compute Backend]
     Order = 40
@@ -92,7 +92,6 @@
     KeyPair = $keypair
     KeyPairLocation = $keypair_location
 
-    BlackboardLocker = ${credentials}-blackboard
     Credentials = $credentials
     ClusterInit = zookeeper/0.1
     ChefRepoVersion = zookeeper/0.1
@@ -102,7 +101,7 @@
     MachineType = $proxy_machine_type
 
         [[[configuration]]]
-        run_list = recipe[cyclecloud]
+        run_list = recipe[cyclecloud], recipe[zookeeper::client]
 
       
     [[nodearray ensemble]]
@@ -110,7 +109,7 @@
     InitialCount = ${ifThenElse(ensemble_size > quorum_size, ensemble_size, quorum_size)}
 
         [[[configuration]]]
-        run_list = recipe[zookeeper]
+        run_list = recipe[zookeeper::server]
 
         cyclecloud.discoverable = true
         zookeeper.mode = ensemble

@@ -8,6 +8,9 @@
 #
 
 include_recipe 'cyclecloud'
+include_recipe 'thunderball'
+include_recipe 'zookeeper::_jdk'
+
 heap_size = ZooKeeper::Helpers.heap_size(node[:memory][:total])
 
 node.set[:zookeeper][:xmx] = "#{heap_size}K"
@@ -16,16 +19,6 @@ node.set[:zookeeper][:xms] = "#{heap_size}K"
 jvm_flags = ["-Xmx#{node[:zookeeper][:xmx]}", "-Xms#{node[:zookeeper][:xmx]}"]
 
 package 'nc'
-
-include_recipe 'thunderball'
-
-thunderball_config 'default' do
-  base "s3://com.cyclecomputing.yumrepo.us-east-1"
-  username 'AKIAIT77JVICJIOK7EFA'
-  password 'buldB+V8GzbcY6tp8o++PGWmrAZnWLPFSH5krnAf'
-end
-
-include_recipe 'zookeeper::jdk'
 
 group 'zookeeper' do
   gid 2001
@@ -63,15 +56,6 @@ link '/opt/zookeeper/current/logs' do
   owner 'zookeeper'
 end
 
-unless node[:ec2].nil?
-  include_recipe 'zookeeper::ec2'
-else
-  directory '/opt/zookeeper/current/data' do
-    owner 'zookeeper'
-    mode 0775
-  end
-end
-
 bash 'set perms on zookeeper' do
   code "chown -R zookeeper:zookeeper /opt/zookeeper"
 end
@@ -92,20 +76,5 @@ template '/etc/init.d/zookeeper' do
   mode 0775
 end
 
-file '/opt/zookeeper/current/data/myid' do
-  content node[:zookeeper][:id]
-  owner 'zookeeper'
-end
 
-service 'zookeeper' do
-  action [:enable, :start]
-end
-
-include_recipe 'cycle-stunnel::server'
-
-stunnel_connection 'zookeeper' do
-  accept '2181'
-  connect "127.0.0.1:#{node[:zookeeper][:client_port]}"
-  notifies :restart, 'service[stunnel]'
-end
 
