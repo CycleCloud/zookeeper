@@ -10,19 +10,26 @@ include_recipe 'zookeeper::default'
 
 
 Chef::Log.info "Searching for ZooKeeper ensemble members..."
+if node['zookeeper']['client'].nil? or node['zookeeper']['client']['cluster_name'].nil?
+  cluster_UID = :all
+else
+  cluster_UID = node['zookeeper']['client']['cluster_name']
+end
+Chef::Log.info "Searching for ZooKeeper ensemble in cluster: #{cluster_UID}"
 if node['zookeeper']['members'].empty?
-  ZooKeeper::Helpers.wait_for_quorum(node[:zookeeper][:quorum], 30) do
-    cluster.search.select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }
+  ZooKeeper::Helpers.wait_for_quorum(node['zookeeper']['quorum'], 30) do
+    cluster.search(:clusterUID => cluster_UID).select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }
   end
-  members = cluster.search.map  do |n|
-    n['hostname']
+  members = cluster.search(:clusterUID => cluster_UID).select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }.map  do |n|
+    n[:cyclecloud][:instance][:ipv4]
   end
   members.sort!
+  Chef::Log.info "ZooKeeper ensemble: #{members.inspect}"
 end
 
 node.set['zookeeper']['members'] = members
-if node[:zookeeper][:members].empty?
-  Chef::Log.info("No zookeeper ensemble members found!")
+if node['zookeeper']['members'].empty?
+  Chef::Log.info "No zookeeper ensemble members found!"
 end
 
 

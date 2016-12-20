@@ -13,12 +13,12 @@ include_recipe 'jdk'
 ruby_block 'symlink java commands into place' do
   block do
     require 'fileutils'
-    FileUtils.ln_s(::Dir.glob('/usr/java/default/bin/*', '/usr/bin'))
+    FileUtils.ln_s(::Dir.glob("#{node['jdk']['home']}/default/bin/*"), '/usr/local/bin')
   end
-  not_if { ::File.exists? '/usr/bin/java' }
+  not_if { ::File.exists? '/usr/local/bin/java' }
 end
 
-file '/etc/profile.d/jdk.sh' do
-  content 'export JAVA_HOME=/usr/java/default'
-  mode 0755
-end
+# file '/etc/profile.d/jdk.sh' do
+#   content 'export JAVA_HOME=/usr/java/default'
+#   mode 0755
+# end

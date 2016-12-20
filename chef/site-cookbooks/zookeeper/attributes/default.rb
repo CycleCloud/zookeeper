@@ -3,7 +3,6 @@ default[:zookeeper][:id] = '1'
 default[:zookeeper][:client_port] = '2182'
 default[:zookeeper][:mode] = 'standalone'
 default[:zookeeper][:data_dir] = '/opt/zookeeper/current/data'
-default[:zookeeper][:client][:discovery_mechanism] = "blackboard" # other valid values is "adstore"
 default[:zookeeper][:members] = []
 default[:zookeeper][:quorum] = 1
 default[:zookeeper][:ready] = false

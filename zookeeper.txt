@@ -1,121 +1,307 @@
-##################################
-## Zookeeper Configuration File ##
-##################################
+###############################
+## Zookeeper Configuration   ##
+###############################
 
-[parameters Cloud Provider Account]
+[parameters General Settings]
+Order = 10
+
+    [[parameters Cloud Service Provider Configuration]]
+    Description = Configure the Cloud Provider account options.
     Order = 10
-    [[parameter credentials]]
-    Label = Credentials:
-    Description = The credentials for the cloud provider
-    ParameterType = Cloud.Credentials
-    
-    [[parameter keypair]]
-    Label = Key pair:
-    Description = The keypair to connect with
-    ParameterType = AWS.Keypair
-    DefaultValue = cyclecloud
 
-    [[parameter keypair_location]]
-    Label = Key pair location:
-    Description = The path to the keypair
-    DefaultValue = ~/.ssh/cyclecloud.pem
+        [[[parameter CloudProvider]]]
+        Label = Cloud Provider
+        ParameterType = Cloud.Provider
+
+        [[[parameter Credentials]]]
+        Description = The credentials for the cloud provider
+        ParameterType = Cloud.Credentials
+
+        [[[parameter Region]]]
+        Label = Region
+        Description = Deployment Location
+        ParameterType = Cloud.Region
+
+    [[parameters Node Access]]
+    Description = "Specify the credentials required for access to the node.  The Keypair Path specifies the path on local machines for cyclecloud CLI access."
+    Order = 20
+
+        [[[parameter awsKeypair]]]
+        Label = AWS Keypair
+        Description = The keypair to connect with
+        ParameterType = AWS.Keypair
+        DefaultValue = cyclecloud
+        Conditions.Required := CloudProvider === "AWS"
+        Conditions.Excluded := CloudProvider !== "AWS"
+
+        [[[parameter keypairLocation]]]
+        Label = Keypair Path
+        Description = The path to the keypair
+        DefaultValue = ~/.ssh/cyclecloud.pem
+        Required = True
+
+        [[[parameter Username]]]
+        Label = Username
+        Description = The username for the built-in local user on all nodes for direct ssh access.
+        DefaultValue = cyclecloud
+        Conditions.Required := (CloudProvider === "Azure" && startswith("cycle.image.win", ImageName))
+        Conditions.Excluded := !(CloudProvider === "Azure" && startswith("cycle.image.win", ImageName))
+
+        [[[parameter Password]]]
+        Label = Password
+        ParameterType = Password
+        Description = The password for the built-in local user on all nodes for direct ssh access.
+        Conditions.Required := (CloudProvider === "Azure" && startswith("cycle.image.win", ImageName))
+        Conditions.Excluded := !(CloudProvider === "Azure" && startswith("cycle.image.win", ImageName))
+
 
 [parameters Zookeeper]
-    Order = 20
-    
-    [[parameter zookeeper_description]]
-    HideLabel = true
-    Config.Plugin = pico.widget.HtmlTemplateWidget
-    Config.Template = "Adjust the ZooKeeper configuration options.<br/>Recommended only for advanced users."
+Order = 20
 
-    [[parameter quorum_size]]
-    Label = Ensemble Size
-    Description = The min. number of live ZooKeeper ensemble members required to achieve quorum.
-    DefaultValue = 2
-    Config.Plugin = pico.form.NumberTextBox
-    Config.MinValue = 2
-    Config.MaxValue = 6
-    Config.IntegerOnly = true
-    
-    [[parameter ensemble_size]]
-    Label = Ensemble Size
-    Description = The number of ZooKeeper ensemble members to start initially.
-    DefaultValue = 2
-    Config.Plugin = pico.form.NumberTextBox
-    Config.MinValue = 2
-    Config.MaxValue = 10
-    Config.IntegerOnly = true
-    
-[parameters Networking]
-    Order = 30
-    
-    [[parameter proxy_description]]
-    HideLabel = true
-    Config.Plugin = pico.widget.HtmlTemplateWidget
-    Config.Template = "The proxy host may be used to enable firewall traversal between the cluster and CycleCloud.   In VPC environments with virtual network, this node is not required."
+    [[parameters Configuration]]
+    Description = Adjust the ZooKeeper configuration options.  Recommended only for advanced users.
+    Order = 10
 
-    [[parameter proxy_machine_type]]
-    Label = Network Proxy MachineType
-    Description = The machine type for the optional proxy host
-    ParameterType = Cloud.MachineType
-    Config.Provider = AWS
-    DefaultValue = c3.large
+        [[[parameter QuorumSize]]]
+        Label = Ensemble Size
+        Description = The min. number of live ZooKeeper ensemble members required to achieve quorum.
+        DefaultValue = 2
+        Config.Plugin = pico.form.NumberTextBox
+        Config.MinValue = 1
+        Config.MaxValue = 6
+        Config.IntegerOnly = true
+
+        [[[parameter EnsembleSize]]]
+        Label = Ensemble Size
+        Description = The number of ZooKeeper ensemble members to start initially.
+        DefaultValue = 3
+        Config.Plugin = pico.form.NumberTextBox
+        Config.MinValue = 1
+        Config.MaxValue = 10
+        Config.IntegerOnly = true
+
+
+[parameters Cluster Software]
+Order = 30
+Description = Specify the scheduling software, and base OS installed on all nodes, and optionally the cluster-init and chef versions from your Locker.
+
+    [[parameter ImageName]]
+    Label = Base OS
+    ParameterType = Cloud.Image
+    Config.OS = linux
+    DefaultValue = cycle.image.centos7
+
+    [[parameter ClusterInit]]
+    Label = Cluster-Init
+    ParameterType = Cloud.ClusterInit
+    DefaultValue = =undefined
+    Description = If set, apply a cluster-init configuration.  Leave blank to run without cluster-init.
+
+    [[parameter ChefRepoVersion]]
+    Label = Custom Chef
+    ParameterType = Cloud.ChefRepo
+    DefaultValue = zookeeper/0.1/
+    Description = If set, use a custom chef version from your Locker.    
+
 
 [parameters Compute Backend]
-    Order = 40
+Order = 40
 
-    [[parameter enable_termination_protection]]
+    [[parameters Instance Types]]
+    Description = "The cluster, in this case, has two roles: the return proxy node and the zookeeper ensemble hosts. Configure which instance types to use based on the requirements of your application.  The proxy host may be used to enable firewall traversal between the cluster and CycleCloud.   In VPC environments with virtual network, this node is not required."
+    Order = 10
+
+        [[[parameter ProxyMachineType]]]
+        Label = Proxy
+        Description = The machine type for the optional proxy host
+        ParameterType = Cloud.MachineType
+            [[[[record Config.ProviderDefaults]]]]
+            AWS = m3.large 
+            Azure = Standard_A2
+            Azure_classic = A2
+            GCP = n1-standard-4
+
+
+       [[[parameter EnsembleMachineType]]]
+       Label = ZooKeeper
+       Description = The machine type for the ZooKeeper members
+       ParameterType = Cloud.MachineType
+           [[[[record Config.ProviderDefaults]]]]
+           AWS = m3.large 
+           Azure = Standard_DS4_v2 
+           GCP = n1-standard-4
+
+    [[parameter EnableTerminationProtection]]
     Label = Termination Prot.?
     DefaultValue = false
     Widget.Plugin = pico.form.BooleanCheckBox
     Widget.Label = Enable Termination for all instances?
+
+    [[parameter EnvironmentTag]]
+    Label = Environment Name
+    DefaultValue = =undefined
+    Conditions.Excluded := CloudProvider === "GCP"
+
+    [[parameter CreatorTag]]
+    Label = Creator Name
+    DefaultValue = =undefined
+    Conditions.Excluded := CloudProvider === "GCP"
+
+    [[parameter EnsembleGcpTagList]]
+    Label = Tag List
+    DefaultValue = =undefined
+    Conditions.Excluded := CloudProvider !== "GCP"
     
+    [[parameter ZookeeperAccessArn]]
+    Label = IAM Profile
+    DefaultValue := undefined
+    Conditions.Excluded := CloudProvider !== "AWS"
+
+    [[parameter GcpServiceAccountEmail]]
+    Label = Service Account
+    DefaultValue := undefined
+    Conditions.Excluded := CloudProvider !== "GCP"
     
-    [[parameter ensemble_machine_type]]
-    Label = ZooKeeper MachineType
-    Description = The machine type for the ZooKeeper members
-    ParameterType = Cloud.MachineType
-    Config.Provider = AWS
-    DefaultValue = m3.large
+    [[parameter GcpServiceAccountScopes]]
+    Label = Account Scopes
+    DefaultValue := undefined
+    Conditions.Excluded := CloudProvider !== "GCP"
+    Conditions.Required := GcpServiceAccountEmail isnt undefined
+        
+    [[parameters AWS Spot Market]]
+    Description = "To use spot instances check the box and enter a bid price below, otherwise on-demand instances will be used"
+    Conditions.Excluded := CloudProvider !== "AWS"
+    Order = 30
     
+        [[[parameter EnsembleBidPricePerCore]]]
+        Label = Bid Price
+        Config.Plugin = pico.form.NumberTextBox
+        Config.MinValue = 0
+        Config.MaxValue = 5.0
+        DefaultValue = =undefined
+        Description = Max. price per core to pay for zookeeper instances 
+
+    [[parameters GCP Preemptible Instances]]
+    Description = "To use premptible instances check the box, otherwise regular instances will be used"
+    Conditions.Excluded := CloudProvider !== "GCP"
+    Order = 40
+
+        [[[parameter EnsemblePreemptible]]]
+        Label = Use Preemptible Instances
+        DefaultValue = false
+        Config.Plugin = pico.form.BooleanCheckBox
+        Config.Label = Use preemptible instances
+
+
+[parameters Networking]
+Description = "Optional use of VPC components. Without specifying a subnet or security group the hosts will be started in the default region, VPC and security group."
+Order = 50
+
+    [[parameters AWS]]
+    Order = 20
+    Conditions.Excluded := CloudProvider !== "AWS"
+    Description = "Optional use of VPC components. Without specifying a subnet or security group the hosts will be started in the default region, VPC and security group."
+    
+        [[[parameter ZookeeperSecurityGroups]]]
+        Label = VPC Security Group
+        Description = "The security group ID(s) to use when in a VPC environment. Can be comma-separated list for multiple security groups. eg: sg-a0000001, sg-a0000002."
+
+        [[[parameter AwsProxySubnetId]]]
+        Label = Proxy Subnet
+        ParameterType = AWS.Subnet
+        Description = The subnet ID to use when in a VPC environment
+        Conditions.Excluded := CloudProvider !== "AWS"
+
+        [[[parameter AwsSubnetIds]]]
+        Label = VPC Subnets
+        ParameterType = AWS.Subnet
+        AutoSelect = true
+        Description = The subnet ID to use when in a VPC environment - this is set internally by the RM.
+        Conditions.Excluded := CloudProvider !== "AWS"
+
+    [[parameters Azure Virtual Network Configuration]]
+    Order = 40
+    Conditions.Excluded := CloudProvider !== "Azure"
+
+        [[[parameter AzureSubnetId]]]
+        Label = Subnet ID
+        Description = Subnet Resource Path (ResourceGroup/VirtualNetwork/Subnet)
+        ParameterType = Azure.Subnet
+        Conditions.Required := CloudProvider === "Azure"
+        Conditions.Excluded := CloudProvider !== "Azure"
+
+    [[parameters Google Compute Network Configuration]]
+    Order = 40
+    Description = No custom configuration required.
+    Conditions.Excluded := CloudProvider !== "GCP"
+
+
+            
 [cluster zookeeper]
+     FormLayout = selectionpanel
+     IconUrl = http://download.cyclecomputing.com/logos/zookeeper-192x192.png
 
-    # Autoscale for Zookeeper is out-of-scope for this example
-    # If required, please contact CycleComputing for additional support
-    Autoscale = false
-    IconUrl = http://download.cyclecomputing.com/logos/zookeeper-192x192.png
+     [[node defaults]]
+     TerminationProtection = $EnableTerminationProtection
+     ImageName = $ImageName
 
-    [[node defaults]]
-    TerminationProtection = $enable_termination_protection
-    Image = Cycle CentOS 6
+     # Chef and Locker Config
+     Credentials = $Credentials
+     ChefRepoVersion = $ChefRepoVersion
+     ClusterInit = $ClusterInit
 
-    KeyPair = $keypair
-    KeyPairLocation = $keypair_location
+     # EC2
+     AWS.InstanceProfileArn=$ZookeeperAccessArn
+     KeyPair = $AwsKeypair
+     KeyPairLocation = $KeypairLocation
+     SecurityGroups = $ZookeeperSecurityGroups
 
-    Credentials = $credentials
-    ClusterInit = zookeeper/0.1
-    ChefRepoVersion = zookeeper/0.1
+     SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsSubnetIds)}
 
-    [[node proxy]]
-    IsReturnProxy = true
-    MachineType = $proxy_machine_type
+     # Azure
+     Region = $Region
+
+     # Comply with tagging standards
+     Tags.Environment = $EnvironmentTag
+     Tags.Creator = $CreatorTag
+
+     [[node proxy]]
+     IsReturnProxy = true
+     MachineType = $ProxyMachineType
+     SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsProxySubnetId)}
+
+         # Configure Azure external input endpoints (for example SSH)
+         [[[input-endpoint SSH]]]
+         PrivatePort = 22
+         PublicPort = 22
+
+         [[[input-endpoint ganglia]]]
+         PrivatePort = 8652
+         PublicPort = 8652        
+
+
+     [[nodearray ensemble]]
+     MachineType = $EnsembleMachineType
+     InitialCount = ${ifThenElse(EnsembleSize > QuorumSize, EnsembleSize, QuorumSize)}
+
+     BidPricePerCore = $EnsembleBidPricePerCore
+     TagList = $EnsembleGcpTagList
+
+     # Use GCP Premptible Instances?
+     Preemptible = ${ifThenElse(EnsemblePreemptible == true, EnsemblePreemptible, undefined)}
 
         [[[configuration]]]
-        run_list = recipe[cyclecloud], recipe[zookeeper::client]
-
-      
-    [[nodearray ensemble]]
-    MachineType = $ensemble_machine_type
-    InitialCount = ${ifThenElse(ensemble_size > quorum_size, ensemble_size, quorum_size)}
-
-        [[[configuration]]]
-        run_list = recipe[zookeeper::server]
+        run_list = recipe[jdk], recipe[zookeeper::server]      
 
         cyclecloud.discoverable = true
         zookeeper.mode = ensemble
-        zookeeper.client.discovery_mechanism = blackboard
         # quorum must be less than or equal to Count
-        zookeeper.quorum = $quorum_size
-        zookeeper.client_port = 2182
+        zookeeper.quorum = $QuorumSize
+        zookeeper.client_port = 2181
+        zookeeper.max_client_cnxns = 500
         zookeeper.ready = true
 
+        # Configure Azure external input endpoints (for example SSH)
+        [[[input-endpoint SSH]]]
+        PrivatePort = 22
+        PublicPort = 55100

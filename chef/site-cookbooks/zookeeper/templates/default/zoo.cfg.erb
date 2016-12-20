@@ -6,9 +6,12 @@ dataDir=<%= node[:zookeeper][:data_dir] %>
 clientPort=<%= node[:zookeeper][:client_port] %>
 
 <% if node[:zookeeper][:mode] == 'ensemble' -%>
+# For single instance ZooKeeper do not list servers 
+<% if node[:zookeeper][:members].length > 1 -%>
 <% server_id = 1 -%>
 <% node[:zookeeper][:members].each do |member| -%>
 server.<%= server_id %>=<%= member %>:2888:3888
 <% server_id += 1 -%>
+<% end -%>
 <% end -%>
 <% end -%>

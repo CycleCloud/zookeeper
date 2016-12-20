@@ -1,55 +1,6 @@
 module ZooKeeper
   class Helpers
 
-    def self.http_get_xml_response(url, username, passwd)
-      uri = URI.parse(url)
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.verify_mode  = OpenSSL::SSL::VERIFY_NONE
-      request = Net::HTTP::Get.new(uri.request_uri)
-      request.basic_auth(username, passwd)
-      http.use_ssl = true if url =~ /https/
-      http.verify_mode  = OpenSSL::SSL::VERIFY_NONE
-      response = http.request(request)
-      xml_doc = REXML::Document.new(response.body)
-    end
-
-    def self.query_adstore(host, username, passwd)
-      require 'net/http'
-      require 'uri'
-      require 'rexml/document'
-
-      filter = URI.encode('Template==="ensemble"&&State==="Started"', '&"')
-      node_url = %Q{#{host}/ads/Cloud.Node?f=(#{filter})&format=xml}
-      xml_doc = http_get_xml_response(node_url, username, passwd)
-
-      zk_instance_ids = []
-      xml_doc.elements.each("classads/c") do |e|
-        zk_instance_ids << e.elements["a[@n='InstanceId']"].elements['s'].text
-      end
-
-      instance_stmt = []
-
-      zk_instance_ids.each do |i|
-        instance_stmt << %Q{InstanceId==="#{i}"}
-      end
-
-      instance_filter = URI.encode(instance_stmt.join("||"), '&"|')
-      
-      aws_url = %Q{#{node[:ec2][:userdata][:user_data][:config][:webServer]}/ads/AWS.Instance?f=(#{instance_filter})&format=xml}
-      xml_doc = http_get_xml_response(aws_url, username, passwd)
-
-      zk_fqdns = []
-      xml_doc.elements.each("classads/c") do |e|
-        zk_fqdns << e.elements["a[@n='PublicHostname']"].elements['s'].text
-      end
-
-      if zk_fqdns.empty?
-        Chef::Log.debug('No zookeeper instances found in the adstore')
-      end
-
-      zk_fqdns
-    end
-
     def self.wait_for_quorum(quorum, sleep_time=10, retries=6, &block)
       results = block.call
       retries = 0
@@ -70,7 +21,7 @@ module ZooKeeper
         n[:zookeeper][:mode] == 'ensemble'
       end
       ensemble_ips = ensemble_members.map do |n|
-        n[:ec2][:public_hostname]
+        n[:cyclecloud][:instance][:ipv4]
       end
       ensemble_ips
     end

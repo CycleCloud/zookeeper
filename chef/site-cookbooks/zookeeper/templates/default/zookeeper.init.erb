@@ -19,6 +19,11 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
+export JAVA_HOME="<%= node['jdk']['home'] %>/default"
+export PATH="<%= node['jdk']['home'] %>/default/bin":/usr/local/bin:${PATH}
+
+echo "Zookeeper using Javaa at: " $( which java )
+
 prog="zookeeper"
 desc="zookeeper Server"
 
@@ -30,7 +35,7 @@ ZOOCFGDIR="<%= node[:zookeeper][:home] %>/conf"
 ZOOCFG="zoo.cfg"
 ZOOCFG="$ZOOCFGDIR/$ZOOCFG"
 ZOO_LOG_DIR="<%= node[:zookeeper][:home] %>/logs"
-ZOO_LOG4J_PROP="INFO,ROLLING"
+ZOO_LOG4J_PROP="INFO,ROLLINGFILE"
 JVMFLAGS="<%= @jvm_flags.join(' ') %>"
 
 ulimit -n 8192 8192

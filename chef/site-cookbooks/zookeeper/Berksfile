@@ -2,7 +2,6 @@ site :opscode
 
 metadata
 cookbook 'thunderball', path: '../thunderball'
-cookbook 's3cmd', path: '../s3cmd'
 cookbook 'cvolume', path: '../cvolume'
 cookbook 'cyclecloud', path: '../cyclecloud'
 cookbook 'cinst', path: '../cinst'

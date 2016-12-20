@@ -73,7 +73,7 @@ B. Deploying the Custom Chef Cookbooks
 
   2. From the same terminal used to import the cluster, run the deploy script:::
 
-       $ ./deploy.sh s3://EXAMPLE/
+       $ ./push.sh s3://EXAMPLE/ zookeeper/0.1
        Using locker: s3://EXAMPLE
        Deploying custom cookbooks...
        100% (0.03/0.03 MB) s3://EXAMPLE/chef/zookeeper/0.1/site-cookbooks.tgz
