@@ -63,7 +63,7 @@ Order = 20
     Order = 10
 
         [[[parameter QuorumSize]]]
-        Label = Ensemble Size
+        Label = Quorum Size
         Description = The min. number of live ZooKeeper ensemble members required to achieve quorum.
         DefaultValue = 2
         Config.Plugin = pico.form.NumberTextBox
@@ -187,7 +187,6 @@ Order = 40
 
 
 [parameters Networking]
-Description = "Optional use of VPC components. Without specifying a subnet or security group the hosts will be started in the default region, VPC and security group."
 Order = 50
 
     [[parameters AWS]]
@@ -265,6 +264,11 @@ Order = 50
      MachineType = $ProxyMachineType
      SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsProxySubnetId)}
 
+         [[[configuration]]]
+         run_list = recipe[cganglia::server]
+
+         cyclecloud.discoverable = true
+        
          # Configure Azure external input endpoints (for example SSH)
          [[[input-endpoint SSH]]]
          PrivatePort = 22

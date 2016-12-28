@@ -2,8 +2,7 @@
 TODO
 ====
 
-  1. Make STunnel Optional or remove altogether
+  1. Add a client example
 
-  2. Add a client example
-
+  2. Make ZK ensemble capable of recovery if a new ensemble member is added.
 
