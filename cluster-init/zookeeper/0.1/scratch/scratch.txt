@@ -1,3 +1,0 @@
-The contents of the scratch sub-directory are copied to the cluster-init/scratch
-directory on each node's local scratch disk.
-

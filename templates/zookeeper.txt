@@ -91,17 +91,10 @@ Description = Specify the scheduling software, and base OS installed on all node
     Config.OS = linux
     DefaultValue = cycle.image.centos7
 
-    [[parameter ClusterInit]]
-    Label = Cluster-Init
-    ParameterType = Cloud.ClusterInit
-    DefaultValue = =undefined
-    Description = If set, apply a cluster-init configuration.  Leave blank to run without cluster-init.
-
-    [[parameter ChefRepoVersion]]
-    Label = Custom Chef
-    ParameterType = Cloud.ChefRepo
-    DefaultValue = zookeeper/0.1/
-    Description = If set, use a custom chef version from your Locker.    
+    [[parameter ProjectVersion]]
+    Label = Project Version
+    DefaultValue = 1.0.0
+    Description = Select the Zookeeper project spec version
 
 
 [parameters Compute Backend]
@@ -242,13 +235,15 @@ Order = 50
      IconUrl = http://download.cyclecomputing.com/logos/zookeeper-192x192.png
 
      [[node defaults]]
+     Project = zookeeper
+     ProjectVersion = $ProjectVersion
+     ProjectSpec = zookeeper
+     
      TerminationProtection = $EnableTerminationProtection
      ImageName = $ImageName
 
      # Chef and Locker Config
      Credentials = $Credentials
-     ChefRepoVersion = $ChefRepoVersion
-     ClusterInit = $ClusterInit
 
      # EC2
      AWS.InstanceProfileArn=$ZookeeperAccessArn
