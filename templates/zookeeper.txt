@@ -296,9 +296,6 @@ Order = 50
         zookeeper.mode = ensemble
         # quorum must be less than or equal to Count
         zookeeper.quorum = $QuorumSize
-        zookeeper.client_port = 2181
-        zookeeper.max_client_cnxns = 500
-        zookeeper.ready = true
 
         # Configure Azure external input endpoints (for example SSH)
         [[[input-endpoint SSH]]]
