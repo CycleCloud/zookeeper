@@ -4,5 +4,6 @@ TODO
 
   1. Add a client example
 
-  2. Make ZK ensemble capable of recovery if a new ensemble member is added.
+  2. Currently, a 2-member quorom won't re-establish until a 3rd node is brought online and all nodes reconverge.
 
+  3. We need to verify that restarting ZK when the server list changes is the right thing to do (it seems to work for re-establishing quorum...)

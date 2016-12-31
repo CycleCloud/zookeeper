@@ -8,6 +8,8 @@ module ZooKeeper
         sleep sleep_time
         retries += 1
         results = block.call
+        Chef::Log.info "Quorum : #{quorum}   Num Results: #{results.length}"
+        Chef::Log.info "Search results: #{results.inspect}"        
       end
       if retries >= 6
         raise Exception, "Timed out waiting for quorum"
