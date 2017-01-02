@@ -58,17 +58,6 @@ directory '/etc/zookeeper' do
   group 'zookeeper'
 end
 
-template '/etc/zookeeper/zoo.cfg' do
-  source 'zoo.cfg.erb'
-  owner 'zookeeper'
-end
-
-link '/opt/zookeeper/current/conf/zoo.cfg' do
-  to '/etc/zookeeper/zoo.cfg'
-  owner 'zookeeper'
-  not_if { ::File.exists?('/opt/zookeeper/current/conf/zoo.cfg') }
-end
-
 template '/etc/zookeeper/log4j.properties' do
   source 'log4j.properties.erb'
   owner 'zookeeper'

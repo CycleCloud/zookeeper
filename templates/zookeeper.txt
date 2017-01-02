@@ -63,7 +63,7 @@ Order = 20
     Order = 10
 
         [[[parameter QuorumSize]]]
-        Label = Ensemble Size
+        Label = Quorum Size
         Description = The min. number of live ZooKeeper ensemble members required to achieve quorum.
         DefaultValue = 2
         Config.Plugin = pico.form.NumberTextBox
@@ -91,17 +91,10 @@ Description = Specify the scheduling software, and base OS installed on all node
     Config.OS = linux
     DefaultValue = cycle.image.centos7
 
-    [[parameter ClusterInit]]
-    Label = Cluster-Init
-    ParameterType = Cloud.ClusterInit
-    DefaultValue = =undefined
-    Description = If set, apply a cluster-init configuration.  Leave blank to run without cluster-init.
-
-    [[parameter ChefRepoVersion]]
-    Label = Custom Chef
-    ParameterType = Cloud.ChefRepo
-    DefaultValue = zookeeper/0.1/
-    Description = If set, use a custom chef version from your Locker.    
+    [[parameter ProjectVersion]]
+    Label = Project Version
+    DefaultValue = 1.0.0
+    Description = Select the Zookeeper project spec version
 
 
 [parameters Compute Backend]
@@ -194,7 +187,6 @@ Order = 40
 
 
 [parameters Networking]
-Description = "Optional use of VPC components. Without specifying a subnet or security group the hosts will be started in the default region, VPC and security group."
 Order = 50
 
     [[parameters AWS]]
@@ -242,13 +234,15 @@ Order = 50
      IconUrl = http://download.cyclecomputing.com/logos/zookeeper-192x192.png
 
      [[node defaults]]
+     Project = zookeeper
+     ProjectVersion = $ProjectVersion
+     ProjectSpec = zookeeper
+     
      TerminationProtection = $EnableTerminationProtection
      ImageName = $ImageName
 
      # Chef and Locker Config
      Credentials = $Credentials
-     ChefRepoVersion = $ChefRepoVersion
-     ClusterInit = $ClusterInit
 
      # EC2
      AWS.InstanceProfileArn=$ZookeeperAccessArn
@@ -270,6 +264,11 @@ Order = 50
      MachineType = $ProxyMachineType
      SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsProxySubnetId)}
 
+         [[[configuration]]]
+         run_list = recipe[cganglia::server]
+
+         cyclecloud.discoverable = true
+        
          # Configure Azure external input endpoints (for example SSH)
          [[[input-endpoint SSH]]]
          PrivatePort = 22
@@ -297,9 +296,6 @@ Order = 50
         zookeeper.mode = ensemble
         # quorum must be less than or equal to Count
         zookeeper.quorum = $QuorumSize
-        zookeeper.client_port = 2181
-        zookeeper.max_client_cnxns = 500
-        zookeeper.ready = true
 
         # Configure Azure external input endpoints (for example SSH)
         [[[input-endpoint SSH]]]
