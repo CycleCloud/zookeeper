@@ -217,7 +217,7 @@ Order = 50
 
 
             
-[cluster zookeeper]
+[cluster Zookeeper]
      FormLayout = selectionpanel
      IconUrl = http://download.cyclecomputing.com/logos/zookeeper-192x192.png
 
