@@ -4,6 +4,6 @@ default['zookeeper']['client_port'] = '2181'
 default['zookeeper']['mode'] = 'standalone'
 default['zookeeper']['data_dir'] = '/opt/zookeeper/current/data'
 default['zookeeper']['members'] = []
-default['zookeeper']['quorum'] = 2
+default['zookeeper']['ensemble_size'] = 3
 default['zookeeper']['ready'] = false
 

@@ -55,21 +55,13 @@ Order = 10
         Conditions.Excluded := !(CloudProvider === "Azure" && startswith("cycle.image.win", ImageName))
 
 
-[parameters Zookeeper]
-Order = 20
+[parameters Cluster Software]
+Order = 30
+Description = Specify the scheduling software, and base OS installed on all nodes, and optionally the cluster-init and chef versions from your Locker.
 
-    [[parameters Configuration]]
-    Description = Adjust the ZooKeeper configuration options.  Recommended only for advanced users.
-    Order = 10
-
-        [[[parameter QuorumSize]]]
-        Label = Quorum Size
-        Description = The min. number of live ZooKeeper ensemble members required to achieve quorum.
-        DefaultValue = 2
-        Config.Plugin = pico.form.NumberTextBox
-        Config.MinValue = 1
-        Config.MaxValue = 6
-        Config.IntegerOnly = true
+     [[parameters Zookeeper]]
+     Description = Adjust the ZooKeeper configuration options.  (Quorum Size = ceil(EnsembleSize/2))
+     Order = 10
 
         [[[parameter EnsembleSize]]]
         Label = Ensemble Size
@@ -80,10 +72,6 @@ Order = 20
         Config.MaxValue = 10
         Config.IntegerOnly = true
 
-
-[parameters Cluster Software]
-Order = 30
-Description = Specify the scheduling software, and base OS installed on all nodes, and optionally the cluster-init and chef versions from your Locker.
 
     [[parameter ImageName]]
     Label = Base OS
@@ -281,7 +269,7 @@ Order = 50
 
      [[nodearray ensemble]]
      MachineType = $EnsembleMachineType
-     InitialCount = ${ifThenElse(EnsembleSize > QuorumSize, EnsembleSize, QuorumSize)}
+     InitialCount = $EnsembleSize
 
      BidPricePerCore = $EnsembleBidPricePerCore
      TagList = $EnsembleGcpTagList
@@ -294,8 +282,7 @@ Order = 50
 
         cyclecloud.discoverable = true
         zookeeper.mode = ensemble
-        # quorum must be less than or equal to Count
-        zookeeper.quorum = $QuorumSize
+        zookeeper.ensemble_size = $EnsembleSize
 
         # Configure Azure external input endpoints (for example SSH)
         [[[input-endpoint SSH]]]

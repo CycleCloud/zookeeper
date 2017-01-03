@@ -17,7 +17,7 @@ else
 end
 Chef::Log.info "Searching for ZooKeeper ensemble in cluster: #{cluster_UID}"
 if node['zookeeper']['members'].empty?
-  ZooKeeper::Helpers.wait_for_quorum(node['zookeeper']['quorum'], 30) do
+  ZooKeeper::Helpers.wait_for_ensemble(node['zookeeper']['ensemble_size'], 30) do
     cluster.search(:clusterUID => cluster_UID).select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }
   end
   members = cluster.search(:clusterUID => cluster_UID).select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }.map  do |n|

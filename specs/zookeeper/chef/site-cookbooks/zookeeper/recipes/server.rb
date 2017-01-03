@@ -29,7 +29,7 @@ cluster.store_discoverable(node.to_json)
 
 if node['zookeeper']['members'].empty?
   cluster = Chef::Recipe.class_variable_get("@@cluster".to_sym)
-  ZooKeeper::Helpers.wait_for_quorum(node['zookeeper']['quorum'], 30) do
+  ZooKeeper::Helpers.wait_for_ensemble(node['zookeeper']['ensemble_size'], 30) do
     cluster.search.select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }
   end
   members = cluster.search.select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }.map  do |n|

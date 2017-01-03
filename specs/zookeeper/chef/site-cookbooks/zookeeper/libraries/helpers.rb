@@ -1,14 +1,14 @@
 module ZooKeeper
   class Helpers
 
-    def self.wait_for_quorum(quorum, sleep_time=10, retries=6, &block)
+    def self.wait_for_ensemble(ensemble_size, sleep_time=10, retries=6, &block)
       results = block.call
       retries = 0
-      while results.length < quorum and retries < 6
+      while results.length < ensemble_size and retries < 6
         sleep sleep_time
         retries += 1
         results = block.call
-        Chef::Log.info "Quorum : #{quorum}   Num Results: #{results.length}"
+        Chef::Log.info "Ensemble Size : #{ensemble_size}   Num Results: #{results.length}"
         Chef::Log.info "Search results: #{results.inspect}"        
       end
       if retries >= 6
