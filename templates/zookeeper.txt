@@ -232,6 +232,9 @@ Order = 50
      # Chef and Locker Config
      Credentials = $Credentials
 
+     # Cycle Examples Repository
+     Locker=cyclecloud-mirrors
+
      # EC2
      AWS.InstanceProfileArn=$ZookeeperAccessArn
      KeyPair = $AwsKeypair
