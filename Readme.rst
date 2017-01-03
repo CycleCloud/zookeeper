@@ -133,5 +133,22 @@ E. Starting and Stopping the ZooKeeper Cluster
      cluster status frame.
      
 
+F. Monitoring ZooKeeper
+-----------------------
 
+  1. Use the ZooKeeper 4-letter words (see: https://zookeeper.apache.org/doc/trunk/zookeeperAdmin.html#The+Four+Letter+Words ):
+
+     a. Install Netcat: ``yum install -y nc``
+
+     b. Send 4-letter words via echo: ``echo mntr | nc localhost 2181``
+
+  2. Download zkTop to one of the ensemble members:
+
+     a. Download the zip from https://github.com/phunt/zktop
+
+     b. Extract the zip onto an ensemble member
+
+     c. Run: ``python zkTop.py --config /etc/zookeeper/zoo.cfg``
+
+  3. You can also use JMX for detailed monitoring.  See: https://zookeeper.apache.org/doc/trunk/zookeeperJMX.html
   

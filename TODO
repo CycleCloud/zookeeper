@@ -6,4 +6,17 @@ TODO
 
   2. Currently, a 2-member quorom won't re-establish until a 3rd node is brought online and all nodes reconverge.
 
-  3. We need to verify that restarting ZK when the server list changes is the right thing to do (it seems to work for re-establishing quorum...)
+  3. Add a smoke test on each converge:  [ https://github.com/phunt/zk-smoketest ]
+
+  4. Look at adding ZK monitoring:
+
+     a. Ganglia: ``src/contrib/monitoring/ganglia/zookeeper_ganglia.py``
+
+        i. See: [ https://github.com/apache/zookeeper/tree/trunk/src/contrib/monitoring ]
+
+     b. Python API: ``contrib/zkpython`` or ``src/contrib/zkpython``
+
+        i. See zkTop or zookeeper_dashboard for an example: [ https://github.com/phunt/zktop ] or [ https://github.com/phunt/zookeeper_dashboard ]
+
+     c. 4-Letter Words or JMX
+
