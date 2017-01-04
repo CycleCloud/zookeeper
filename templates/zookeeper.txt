@@ -60,12 +60,12 @@ Order = 30
 Description = Specify the scheduling software, and base OS installed on all nodes, and optionally the cluster-init and chef versions from your Locker.
 
      [[parameters Zookeeper]]
-     Description = Adjust the ZooKeeper configuration options.  (Quorum Size = ceil(EnsembleSize/2))
+     Description = Adjust the Kafka and ZooKeeper cluster size.  Ensemble Size >= 3 required for fault tolerance (default range: 1..10).
      Order = 10
 
         [[[parameter EnsembleSize]]]
         Label = Ensemble Size
-        Description = The number of ZooKeeper ensemble members to start initially.
+        Description = The number of ZooKeeper ensemble members to start initially.  (Quorum Size = ceil(EnsembleSize/2))
         DefaultValue = 3
         Config.Plugin = pico.form.NumberTextBox
         Config.MinValue = 1
@@ -113,10 +113,10 @@ Order = 40
            GCP = n1-standard-4
 
     [[parameter EnableTerminationProtection]]
-    Label = Termination Prot.?
+    Label = Term Protection
     DefaultValue = false
     Widget.Plugin = pico.form.BooleanCheckBox
-    Widget.Label = Enable Termination for all instances?
+    Widget.Label = Enable Termination Protection for all instances?
 
     [[parameter EnvironmentTag]]
     Label = Environment Name
@@ -149,30 +149,6 @@ Order = 40
     Conditions.Excluded := CloudProvider !== "GCP"
     Conditions.Required := GcpServiceAccountEmail isnt undefined
         
-    [[parameters AWS Spot Market]]
-    Description = "To use spot instances check the box and enter a bid price below, otherwise on-demand instances will be used"
-    Conditions.Excluded := CloudProvider !== "AWS"
-    Order = 30
-    
-        [[[parameter EnsembleBidPricePerCore]]]
-        Label = Bid Price
-        Config.Plugin = pico.form.NumberTextBox
-        Config.MinValue = 0
-        Config.MaxValue = 5.0
-        DefaultValue = =undefined
-        Description = Max. price per core to pay for zookeeper instances 
-
-    [[parameters GCP Preemptible Instances]]
-    Description = "To use premptible instances check the box, otherwise regular instances will be used"
-    Conditions.Excluded := CloudProvider !== "GCP"
-    Order = 40
-
-        [[[parameter EnsemblePreemptible]]]
-        Label = Use Preemptible Instances
-        DefaultValue = false
-        Config.Plugin = pico.form.BooleanCheckBox
-        Config.Label = Use preemptible instances
-
 
 [parameters Networking]
 Order = 50
@@ -274,11 +250,7 @@ Order = 50
      MachineType = $EnsembleMachineType
      InitialCount = $EnsembleSize
 
-     BidPricePerCore = $EnsembleBidPricePerCore
      TagList = $EnsembleGcpTagList
-
-     # Use GCP Premptible Instances?
-     Preemptible = ${ifThenElse(EnsemblePreemptible == true, EnsemblePreemptible, undefined)}
 
         [[[configuration]]]
         run_list = recipe[jdk], recipe[zookeeper::server]      
