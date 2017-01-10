@@ -48,7 +48,7 @@ file '/etc/profile.d/zookeeper.sh' do
   content <<-EOH
   #!/bin/bash
   export ZOOKEEPER_HOSTS="#{members.map{ |n| n[1] }.join(',')}"
-  export ZOOKEEPER_PORT=2181
+  export ZOOKEEPER_PORT=#{node['zookeeper']['client_port']}
   EOH
   mode 00755
 end
