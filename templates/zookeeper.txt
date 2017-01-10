@@ -59,9 +59,24 @@ Order = 10
 Order = 30
 Description = Specify the scheduling software, and base OS installed on all nodes, and optionally the cluster-init and chef versions from your Locker.
 
-     [[parameters Zookeeper]]
-     Description = Adjust the Kafka and ZooKeeper cluster size.  Ensemble Size >= 3 required for fault tolerance (default range: 1..10).
+     [[parameters Software]]
      Order = 10
+
+        [[[parameter ImageName]]]
+        Label = Base OS
+        ParameterType = Cloud.Image
+        Config.OS = linux
+        DefaultValue = cycle.image.centos7
+
+        [[[parameter ProjectVersion]]]
+        Label = Project Version
+        DefaultValue = 1.0.0
+        Description = Select the Zookeeper project spec version
+        Hidden = true
+
+     [[parameters Zookeeper]]
+     Description = Adjust the ZooKeeper cluster size.  Ensemble Size >= 3 required for fault tolerance (max: 10).
+     Order = 20
 
         [[[parameter EnsembleSize]]]
         Label = Ensemble Size
@@ -72,17 +87,6 @@ Description = Specify the scheduling software, and base OS installed on all node
         Config.MaxValue = 10
         Config.IntegerOnly = true
 
-
-    [[parameter ImageName]]
-    Label = Base OS
-    ParameterType = Cloud.Image
-    Config.OS = linux
-    DefaultValue = cycle.image.centos7
-
-    [[parameter ProjectVersion]]
-    Label = Project Version
-    DefaultValue = 1.0.0
-    Description = Select the Zookeeper project spec version
 
 
 [parameters Compute Backend]
@@ -116,21 +120,11 @@ Order = 40
     Label = Term Protection
     DefaultValue = false
     Widget.Plugin = pico.form.BooleanCheckBox
-    Widget.Label = Enable Termination Protection for all instances?
-
-    [[parameter EnvironmentTag]]
-    Label = Environment Name
-    DefaultValue = =undefined
-    Conditions.Excluded := CloudProvider === "GCP"
-
-    [[parameter CreatorTag]]
-    Label = Creator Name
-    DefaultValue = =undefined
-    Conditions.Excluded := CloudProvider === "GCP"
+    Widget.Label = Enable Termination Protection?
 
     [[parameter EnsembleGcpTagList]]
     Label = Tag List
-    DefaultValue = =undefined
+    ParameterType = StringList
     Conditions.Excluded := CloudProvider !== "GCP"
     
     [[parameter ZookeeperAccessArn]]
@@ -138,17 +132,6 @@ Order = 40
     DefaultValue := undefined
     Conditions.Excluded := CloudProvider !== "AWS"
 
-    [[parameter GcpServiceAccountEmail]]
-    Label = Service Account
-    DefaultValue := undefined
-    Conditions.Excluded := CloudProvider !== "GCP"
-    
-    [[parameter GcpServiceAccountScopes]]
-    Label = Account Scopes
-    DefaultValue := undefined
-    Conditions.Excluded := CloudProvider !== "GCP"
-    Conditions.Required := GcpServiceAccountEmail isnt undefined
-        
 
 [parameters Networking]
 Order = 50
@@ -158,22 +141,23 @@ Order = 50
     Conditions.Excluded := CloudProvider !== "AWS"
     Description = "Optional use of VPC components. Without specifying a subnet or security group the hosts will be started in the default region, VPC and security group."
     
-        [[[parameter ZookeeperSecurityGroups]]]
-        Label = VPC Security Group
-        Description = "The security group ID(s) to use when in a VPC environment. Can be comma-separated list for multiple security groups. eg: sg-a0000001, sg-a0000002."
-
         [[[parameter AwsProxySubnetId]]]
         Label = Proxy Subnet
         ParameterType = AWS.Subnet
-        Description = The subnet ID to use when in a VPC environment
+        Description = The subnet ID to use when in a VPC environment.
         Conditions.Excluded := CloudProvider !== "AWS"
 
-        [[[parameter AwsSubnetIds]]]
+        [[[parameter AwsSubnetId]]]
         Label = VPC Subnets
         ParameterType = AWS.Subnet
         AutoSelect = true
-        Description = The subnet ID to use when in a VPC environment - this is set internally by the RM.
+        Description = The subnet ID to use when in a VPC environment.
         Conditions.Excluded := CloudProvider !== "AWS"
+
+        [[[parameter ZookeeperSecurityGroups]]]
+        Label = VPC Security Group
+        Description = "The security group ID(s) to use when in a VPC environment. Can be comma-separated list for multiple security groups. eg: sg-a0000001, sg-a0000002."
+        ParameterType = AWS.SecurityGroupList
 
     [[parameters Azure Virtual Network Configuration]]
     Order = 40
@@ -217,14 +201,10 @@ Order = 50
      KeyPairLocation = $KeypairLocation
      SecurityGroups = $ZookeeperSecurityGroups
 
-     SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsSubnetIds)}
+     SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsSubnetId)}
 
      # Azure
      Region = $Region
-
-     # Comply with tagging standards
-     Tags.Environment = $EnvironmentTag
-     Tags.Creator = $CreatorTag
 
      [[node proxy]]
      IsReturnProxy = true
