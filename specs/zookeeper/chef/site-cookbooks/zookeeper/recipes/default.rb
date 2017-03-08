@@ -12,8 +12,8 @@ include_recipe 'thunderball'
 
 heap_size = ZooKeeper::Helpers.heap_size(node['memory']['total'])
 
-node.set['zookeeper']['xmx'] = "#{heap_size}K"
-node.set['zookeeper']['xms'] = "#{heap_size}K"
+node.override['zookeeper']['xmx'] = "#{heap_size}K"
+node.override['zookeeper']['xms'] = "#{heap_size}K"
 
 
 user 'zookeeper' do
@@ -21,7 +21,7 @@ user 'zookeeper' do
 end
 
 thunderball 'zookeeper' do
-  url 'cycle/zookeeper-3.4.6.tar.gz'
+  url "cycle/#{node['zookeeper']['pkg']}.tar.gz"
 end
 
 %w{ /opt/zookeeper /opt/zookeeper/logs }.each do |dir|
@@ -33,12 +33,12 @@ end
 end
 
 bash 'untar zookeeper' do
-  code "tar xvzf #{node['thunderball']['storedir']}/cycle/zookeeper-3.4.6.tar.gz -C /opt/zookeeper"
-  not_if { ::File.exists?('/opt/zookeeper/zookeeper-3.4.6') }
+  code "tar xvzf #{node['thunderball']['storedir']}/cycle/#{node['zookeeper']['pkg']}.tar.gz -C /opt/zookeeper"
+  not_if { ::File.exists?("/opt/zookeeper/#{node['zookeeper']['pkg']}") }
 end
 
 link '/opt/zookeeper/current' do
-  to '/opt/zookeeper/zookeeper-3.4.6'
+  to "/opt/zookeeper/#{node['zookeeper']['pkg']}"
   owner 'zookeeper'
   not_if { ::File.exists?('/opt/zookeeper/current') }
 end

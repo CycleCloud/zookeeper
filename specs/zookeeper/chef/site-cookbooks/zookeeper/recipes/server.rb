@@ -22,26 +22,28 @@ if node['zookeeper']['data_dir'] != "#{node['zookeeper']['home']}/data"
   end
 end
 
-node.set['zookeeper']['ready'] = true
-node.set['cyclecloud']['discoverable'] = true
-node.set['zookeeper']['id'] = (node['cyclecloud']['instance']['ipv4'].gsub('.', '').to_i % 2**31).to_s
-cluster.store_discoverable(node.to_json)
+# Disable search caching to ensure that search gets new results on each retry
+node.override['cyclecloud']['search']['caching']['disabled'] = true
+node.override['zookeeper']['ready'] = true
+node.override['zookeeper']['id'] = (node['cyclecloud']['instance']['ipv4'].gsub('.', '').to_i % 2**31).to_s
+
+cluster.store_discoverable()
 
 if node['zookeeper']['members'].empty?
   cluster = Chef::Recipe.class_variable_get("@@cluster".to_sym)
   ZooKeeper::Helpers.wait_for_ensemble(node['zookeeper']['ensemble_size'], 30) do
     cluster.search.select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }
+    # cluster.search.select {|n| not n['zookeeper'].nil?}
   end
   members = cluster.search.select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }.map  do |n|
+  # members = cluster.search.select {|n| not n['zookeeper'].nil?}.map  do |n|
     [n['zookeeper']['id'], n['cyclecloud']['instance']['ipv4']]
   end
   members.sort {|a,b| a[1] <=> b[1]}.reverse
-  Chef::Log.info "ZooKeeper ensemble: [ #{members.inspect} ]"
+
+  node.override['zookeeper']['members'] = members
 end
-
-node.set['zookeeper']['members'] = members
-# node.set['zookeeper']['id'] = (node['zookeeper']['members'].index(node['cyclecloud']['instance']['ipv4']) + 1).to_s
-
+Chef::Log.info "ZooKeeper ensemble: [ #{node['zookeeper']['members'].inspect} ]"
 
 template '/etc/zookeeper/zoo.cfg' do
   source 'zoo.cfg.erb'

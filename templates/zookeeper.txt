@@ -120,7 +120,7 @@ Order = 40
     Label = Term Protection
     DefaultValue = false
     Widget.Plugin = pico.form.BooleanCheckBox
-    Widget.Label = Enable Termination Protection?
+    Widget.Label = Enable Termination Protection
 
     [[parameter EnsembleGcpTagList]]
     Label = Tag List

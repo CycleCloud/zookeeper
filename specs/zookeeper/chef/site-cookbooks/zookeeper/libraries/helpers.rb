@@ -9,7 +9,7 @@ module ZooKeeper
         retries += 1
         results = block.call
         Chef::Log.info "Ensemble Size : #{ensemble_size}   Num Results: #{results.length}"
-        Chef::Log.info "Search results: #{results.inspect}"        
+#        Chef::Log.info "Search results: #{results.inspect}"        
       end
       if retries >= 6
         raise Exception, "Timed out waiting for quorum"
