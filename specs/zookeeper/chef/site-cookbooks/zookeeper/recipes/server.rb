@@ -33,21 +33,26 @@ if node['zookeeper']['members'].empty?
   cluster = Chef::Recipe.class_variable_get("@@cluster".to_sym)
   ZooKeeper::Helpers.wait_for_ensemble(node['zookeeper']['ensemble_size'], 30) do
     cluster.search.select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }
-    # cluster.search.select {|n| not n['zookeeper'].nil?}
   end
   members = cluster.search.select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }.map  do |n|
-  # members = cluster.search.select {|n| not n['zookeeper'].nil?}.map  do |n|
     [n['zookeeper']['id'], n['cyclecloud']['instance']['ipv4']]
   end
-  members.sort {|a,b| a[1] <=> b[1]}.reverse
+  members = members.sort {|a,b| a[1] <=> b[1]}.reverse
 
   node.override['zookeeper']['members'] = members
 end
 Chef::Log.info "ZooKeeper ensemble: [ #{node['zookeeper']['members'].inspect} ]"
 
-template '/etc/zookeeper/zoo.cfg' do
+zk_template = template '/etc/zookeeper/zoo.cfg' do
   source 'zoo.cfg.erb'
+  mode "0644"
   owner 'zookeeper'
+end
+
+ruby_block "zoo_cfg_updated" do
+  block do
+    node.override['zookeeper']['members_changed'] = zk_template.updated_by_last_action?
+  end
   notifies :restart, 'service[zookeeper]'
 end
 
@@ -72,8 +77,22 @@ template '/etc/init.d/zookeeper' do
   mode 0775
 end
 
+log "Zoo.cfg WAS updated by last action" do
+  level :info
+  only_if { node['zookeeper']['members_changed'] == true }
+end
+
+log "Zoo.cfg NOT updated by last action" do
+  level :info
+  only_if { not zk_template.updated_by_last_action? }
+end
+
+
 service 'zookeeper' do
   action [:enable, :start]
+  # Only restart if the template changes (since it causes a re-connect of all clients)
+  only_if { zk_template.updated_by_last_action? }
+  # only_if { node['zookeeper']['members_changed'] == true }
 end
 
 # Pull in the Jetpack LWRP
