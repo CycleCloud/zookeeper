@@ -70,7 +70,7 @@ Description = Specify the scheduling software, and base OS installed on all node
 
         [[[parameter ProjectVersion]]]
         Label = Project Version
-        DefaultValue = 1.0.0
+        DefaultValue = 1.1.0
         Description = Select the Zookeeper project spec version
         Hidden = true
 
@@ -182,10 +182,6 @@ Order = 50
      IconUrl = http://download.cyclecomputing.com/logos/zookeeper-192x192.png
 
      [[node defaults]]
-     Project = zookeeper
-     ProjectVersion = $ProjectVersion
-     ProjectSpec = zookeeper
-     
      TerminationProtection = $EnableTerminationProtection
      ImageName = $ImageName
 
@@ -205,6 +201,8 @@ Order = 50
 
      # Azure
      Region = $Region
+
+     [[[cluster-init zookeeper:zookeeper:$ProjectVersion]]]
 
      [[node proxy]]
      IsReturnProxy = true
