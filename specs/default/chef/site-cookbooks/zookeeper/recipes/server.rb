@@ -30,7 +30,6 @@ node.override['zookeeper']['id'] = (node['cyclecloud']['instance']['ipv4'].gsub(
 cluster.store_discoverable()
 
 if node['zookeeper']['members'].empty?
-  cluster = Chef::Recipe.class_variable_get("@@cluster".to_sym)
   ZooKeeper::Helpers.wait_for_ensemble(node['zookeeper']['ensemble_size'], 30) do
     cluster.search.select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }
   end

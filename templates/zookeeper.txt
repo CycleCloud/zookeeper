@@ -12,6 +12,7 @@ Order = 10
         [[[parameter CloudProvider]]]
         Label = Cloud Provider
         ParameterType = Cloud.Provider
+	DefaultValue = azure
 
         [[[parameter Credentials]]]
         Description = The credentials for the cloud provider
@@ -21,6 +22,7 @@ Order = 10
         Label = Region
         Description = Deployment Location
         ParameterType = Cloud.Region
+	DefaultValue = westus2
 
     [[parameters Node Access]]
     Description = "Specify the credentials required for access to the node.  The Keypair Path specifies the path on local machines for cyclecloud CLI access."
@@ -70,7 +72,7 @@ Description = Specify the scheduling software, and base OS installed on all node
 
         [[[parameter ProjectVersion]]]
         Label = Project Version
-        DefaultValue = 1.1.0
+        DefaultValue = 1.2.0
         Description = Select the Zookeeper project spec version
         Hidden = true
 
@@ -188,9 +190,6 @@ Order = 50
      # Chef and Locker Config
      Credentials = $Credentials
 
-     # Cycle Examples Repository
-     Locker=cyclecloud-mirrors
-
      # EC2
      AWS.InstanceProfileArn=$ZookeeperAccessArn
      KeyPair = $AwsKeypair
@@ -202,7 +201,9 @@ Order = 50
      # Azure
      Region = $Region
 
-     [[[cluster-init zookeeper:zookeeper:$ProjectVersion]]]
+     [[[cluster-init zookeeper:default:$ProjectVersion]]]
+     # Cycle Common Repository
+     Locker=cyclecloud
 
      [[node proxy]]
      IsReturnProxy = true

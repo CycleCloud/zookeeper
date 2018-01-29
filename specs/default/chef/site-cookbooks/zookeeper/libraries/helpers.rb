@@ -18,7 +18,6 @@ module ZooKeeper
     end
 
     def self.ensemble_members(opts={})
-      cluster = Chef::Recipe.class_variable_get("@@cluster".to_sym)
       ensemble_members = cluster.search(opts) do |n|
         n[:zookeeper][:mode] == 'ensemble'
       end
