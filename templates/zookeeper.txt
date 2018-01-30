@@ -122,7 +122,7 @@ Order = 40
     Label = Term Protection
     DefaultValue = false
     Widget.Plugin = pico.form.BooleanCheckBox
-    Widget.Label = Enable Termination Protection
+    Widget.Label = Enable Termination Protection?
 
     [[parameter EnsembleGcpTagList]]
     Label = Tag List
@@ -177,11 +177,16 @@ Order = 50
     Description = No custom configuration required.
     Conditions.Excluded := CloudProvider !== "GCP"
 
+    [[parameter ExecuteNodesPublic]]
+    Label = Public Execute
+    DefaultValue = false
+    Widget.Plugin = pico.form.BooleanCheckBox
+    Widget.Label = Make the Zookeeper ensemble members accessible from the Internet
 
             
 [cluster Zookeeper]
-     FormLayout = selectionpanel
-     IconUrl = http://download.cyclecomputing.com/logos/zookeeper-192x192.png
+FormLayout = selectionpanel
+IconUrl = http://download.cyclecomputing.com/logos/zookeeper-192x192.png
 
      [[node defaults]]
      TerminationProtection = $EnableTerminationProtection
@@ -234,6 +239,9 @@ Order = 50
      InitialCount = $EnsembleSize
 
      TagList = $EnsembleGcpTagList
+
+         [[[network-interface]]]
+         AssociatePublicIpAddress = $ExecuteNodesPublic
 
 	 [[[configuration]]]
 	 run_list = recipe[cganglia::client]
