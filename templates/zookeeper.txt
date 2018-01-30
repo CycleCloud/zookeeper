@@ -201,9 +201,9 @@ Order = 50
      # Azure
      Region = $Region
 
-     [[[cluster-init zookeeper:default:$ProjectVersion]]]
-     # Cycle Common Repository
-     Locker=cyclecloud
+         [[[cluster-init zookeeper:default:$ProjectVersion]]]
+         # Cycle Common Repository
+         Locker=cyclecloud
 
      [[node proxy]]
      IsReturnProxy = true
@@ -211,7 +211,7 @@ Order = 50
      SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsProxySubnetId)}
 
          [[[configuration]]]
-         run_list = recipe[cganglia::server]
+         run_list = recipe[cganglia::client], recipe[cganglia::server]
 
          cyclecloud.discoverable = true
         
@@ -224,6 +224,10 @@ Order = 50
          PrivatePort = 8652
          PublicPort = 8652        
 
+         [[[cluster-init zookeeper:client:$ProjectVersion]]]
+         # Cycle Common Repository
+         Locker=cyclecloud
+
 
      [[nodearray ensemble]]
      MachineType = $EnsembleMachineType
@@ -231,14 +235,18 @@ Order = 50
 
      TagList = $EnsembleGcpTagList
 
-        [[[configuration]]]
-        run_list = recipe[jdk], recipe[zookeeper::server]      
+	 [[[configuration]]]
+	 run_list = recipe[cganglia::client]
 
-        cyclecloud.discoverable = true
-        zookeeper.mode = ensemble
-        zookeeper.ensemble_size = $EnsembleSize
+	 cyclecloud.discoverable = true
+	 zookeeper.mode = ensemble
+	 zookeeper.ensemble_size = $EnsembleSize
 
-        # Configure Azure external input endpoints (for example SSH)
-        [[[input-endpoint SSH]]]
-        PrivatePort = 22
-        PublicPort = 55100
+	 # Configure Azure external input endpoints (for example SSH)
+	 [[[input-endpoint SSH]]]
+	 PrivatePort = 22
+	 PublicPort = 55100
+
+	 [[[cluster-init zookeeper:server:$ProjectVersion]]]
+	 # Cycle Common Repository
+	 Locker=cyclecloud
