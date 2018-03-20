@@ -29,23 +29,15 @@ node.override['zookeeper']['id'] = (node['cyclecloud']['instance']['ipv4'].gsub(
 
 cluster.store_discoverable()
 
-if node['zookeeper']['members'].empty?
-  ZooKeeper::Helpers.wait_for_ensemble(node['zookeeper']['ensemble_size'], 30) do
-    cluster.search.select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }
-  end
-  members = cluster.search.select {|n| not n['zookeeper'].nil? and n['zookeeper']['ready'] == true }.map  do |n|
-    [n['zookeeper']['id'], n['cyclecloud']['instance']['ipv4']]
-  end
-  members = members.sort {|a,b| a[1] <=> b[1]}.reverse
-
-  node.override['zookeeper']['members'] = members
-end
-Chef::Log.info "ZooKeeper ensemble: [ #{node['zookeeper']['members'].inspect} ]"
-
 zk_template = template '/etc/zookeeper/zoo.cfg' do
   source 'zoo.cfg.erb'
   mode "0644"
   owner 'zookeeper'
+  variables lazy {
+    {
+      :members =>  ZooKeeper::Helpers.find_members(node, node['cyclecloud']['cluster']['name'])
+    }
+  }
 end
 
 ruby_block "zoo_cfg_updated" do
@@ -91,7 +83,6 @@ service 'zookeeper' do
   action [:enable, :start]
   # Only restart if the template changes (since it causes a re-connect of all clients)
   only_if { zk_template.updated_by_last_action? }
-  # only_if { node['zookeeper']['members_changed'] == true }
 end
 
 # Pull in the Jetpack LWRP

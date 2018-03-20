@@ -19,10 +19,7 @@
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-export JAVA_HOME="<%= node['jdk']['home'] %>/default"
-export PATH="<%= node['jdk']['home'] %>/default/bin":/usr/local/bin:${PATH}
-
-echo "Zookeeper using Javaa at: " $( which java )
+source /etc/profile.d/jdk.sh
 
 prog="zookeeper"
 desc="zookeeper Server"
