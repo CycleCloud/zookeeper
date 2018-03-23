@@ -1,6 +1,36 @@
 module ZooKeeper
   class Helpers
 
+    def self.find_members(node, cluster_UID)
+      # Finds ensemble members, uses cached value if exists
+      
+      # the cluster object cannot be looked up any other way
+      cluster = ::CycleCloudCluster.new(node)
+      ensemble_size = node['zookeeper']['ensemble_size']
+      
+      if node['zookeeper']['members'].length == ensemble_size
+        node['zookeeper']['members']
+      else
+        Chef::Log.info "Searching for ZooKeeper ensemble members..."
+        # wait up to 200 seconds for the ensemble to become ready
+        self.wait_for_ensemble(ensemble_size, 5, 40) do
+          cluster.search(:clusterUID => cluster_UID).select do |n|
+            not n['zookeeper'].nil? and n['zookeeper']['ready'] == true
+          end
+        end
+        
+        member_nodes = cluster.search(:clusterUID => cluster_UID).select do |n|
+          !n['zookeeper'].nil? && n['zookeeper']['ready'] == true
+        end
+        
+        members = member_nodes.map{|n| [n['zookeeper']['id'], n['cyclecloud']['instance']['ipv4']] }
+        members.sort {|a,b| a[1] <=> b[1]}.reverse
+        Chef::Log.info "ZooKeeper ensemble: #{members.inspect}"
+        node.set['zookeeper']['members'] = members
+        members
+      end
+    end
+    
     def self.wait_for_ensemble(ensemble_size, sleep_time=10, retries=6, &block)
       results = block.call
       retries = 0
@@ -9,7 +39,6 @@ module ZooKeeper
         retries += 1
         results = block.call
         Chef::Log.info "Ensemble Size : #{ensemble_size}   Num Results: #{results.length}"
-#        Chef::Log.info "Search results: #{results.inspect}"        
       end
       if retries >= 6
         raise Exception, "Timed out waiting for quorum"

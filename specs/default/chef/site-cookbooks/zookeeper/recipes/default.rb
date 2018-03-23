@@ -8,21 +8,21 @@
 #
 
 include_recipe 'cyclecloud'
-include_recipe 'thunderball'
+include_recipe 'ark'
 
 heap_size = ZooKeeper::Helpers.heap_size(node['memory']['total'])
 
 node.override['zookeeper']['xmx'] = "#{heap_size}K"
 node.override['zookeeper']['xms'] = "#{heap_size}K"
 
-
 user 'zookeeper' do
   shell '/bin/bash'
 end
 
-thunderball 'zookeeper' do
-  url "cycle/#{node['zookeeper']['pkg']}.tar.gz"
-end
+mirror = "http://apache.mirrors.tds.net/zookeeper/"
+version = '3.4.11'
+checksum = 'f6bd68a1c8f7c13ea4c2c99f13082d0d71ac464ffaf3bf7a365879ab6ad10e84'
+zk_url = "#{mirror}/zookeeper-#{version}/zookeeper-#{version}.tar.gz"
 
 %w{ /opt/zookeeper /opt/zookeeper/logs }.each do |dir|
   directory dir do
@@ -32,13 +32,18 @@ end
   end
 end
 
-bash 'untar zookeeper' do
-  code "tar xvzf #{node['thunderball']['storedir']}/cycle/#{node['zookeeper']['pkg']}.tar.gz -C /opt/zookeeper"
-  not_if { ::File.exists?("/opt/zookeeper/#{node['zookeeper']['pkg']}") }
+ark 'zookeeper' do
+  url zk_url
+  version version
+  prefix_root '/opt/zookeeper'
+  home_dir '/opt/zookeeper/current'
+  checksum checksum
+  owner 'zookeeper'
+  group 'zookeeper'
 end
 
 link '/opt/zookeeper/current' do
-  to "/opt/zookeeper/#{node['zookeeper']['pkg']}"
+  to "/opt/zookeeper/zookeeper-#{version}"
   owner 'zookeeper'
   not_if { ::File.exists?('/opt/zookeeper/current') }
 end
@@ -47,10 +52,6 @@ link '/opt/zookeeper/current/logs' do
   to '/opt/zookeeper/logs'
   owner 'zookeeper'
   not_if { ::File.exists?('/opt/zookeeper/current/logs') }
-end
-
-bash 'set perms on zookeeper' do
-  code "chown -R zookeeper:zookeeper /opt/zookeeper"
 end
 
 directory '/etc/zookeeper' do
