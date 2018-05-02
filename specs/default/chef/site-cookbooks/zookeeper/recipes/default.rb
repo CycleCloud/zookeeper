@@ -20,8 +20,8 @@ user 'zookeeper' do
 end
 
 mirror = "http://apache.mirrors.tds.net/zookeeper/"
-version = '3.4.11'
-checksum = 'f6bd68a1c8f7c13ea4c2c99f13082d0d71ac464ffaf3bf7a365879ab6ad10e84'
+version = '3.4.12'
+checksum = 'c686f9319050565b58e642149cb9e4c9cc8c7207aacc2cb70c5c0672849594b9'
 zk_url = "#{mirror}/zookeeper-#{version}/zookeeper-#{version}.tar.gz"
 
 %w{ /opt/zookeeper /opt/zookeeper/logs }.each do |dir|
