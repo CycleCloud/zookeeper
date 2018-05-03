@@ -9,7 +9,7 @@
 include_recipe 'zookeeper::default'
 
 if node['zookeeper']['client'].nil? or node['zookeeper']['client']['cluster_name'].nil?
-  cluster_UID = :all
+  cluster_UID = node[:cyclecloud][:cluster][:name]
 else
   cluster_UID = node['zookeeper']['client']['cluster_name']
 end
