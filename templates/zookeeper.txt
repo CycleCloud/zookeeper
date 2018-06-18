@@ -9,12 +9,17 @@ Order = 10
     Description = Configure the Cloud Provider account options.
     Order = 10
 
+        [[[parameter CloudProvider]]]
+        Label = Cloud Provider
+        ParameterType = Cloud.Provider
+	DefaultValue = azure
+
         [[[parameter Credentials]]]
         Description = The credentials for the cloud provider
         ParameterType = Cloud.Credentials
 
-        [[[parameter Location]]]
-        Label = Location
+        [[[parameter Region]]]
+        Label = Region
         Description = Deployment Location
         ParameterType = Cloud.Region
 	DefaultValue = westus2
@@ -23,6 +28,13 @@ Order = 10
     Description = "Specify the credentials required for access to the node.  The Keypair Path specifies the path on local machines for cyclecloud CLI access."
     Order = 20
 
+        [[[parameter awsKeypair]]]
+        Label = AWS Keypair
+        Description = The keypair to connect with
+        ParameterType = AWS.Keypair
+        DefaultValue = cyclecloud
+        Conditions.Required := CloudProvider === "AWS"
+        Conditions.Excluded := CloudProvider !== "AWS"
 
         [[[parameter keypairLocation]]]
         Label = Keypair Path
@@ -34,13 +46,15 @@ Order = 10
         Label = Username
         Description = The username for the built-in local user on all nodes for direct ssh access.
         DefaultValue = cyclecloud
+        Conditions.Required := (CloudProvider === "Azure" && startswith("cycle.image.win", ImageName))
+        Conditions.Excluded := !(CloudProvider === "Azure" && startswith("cycle.image.win", ImageName))
 
         [[[parameter Password]]]
         Label = Password
         ParameterType = Password
         Description = The password for the built-in local user on all nodes for direct ssh access.
-        Conditions.Required := startswith("cycle.image.win", ImageName)
-        Conditions.Excluded := !startswith("cycle.image.win", ImageName)
+        Conditions.Required := (CloudProvider === "Azure" && startswith("cycle.image.win", ImageName))
+        Conditions.Excluded := !(CloudProvider === "Azure" && startswith("cycle.image.win", ImageName))
 
 
 [parameters Cluster Software]
@@ -58,16 +72,9 @@ Description = Specify the scheduling software, and base OS installed on all node
 
         [[[parameter ProjectVersion]]]
         Label = Project Version
-        DefaultValue = 1.3.0
+        DefaultValue = 1.4.0
         Description = Select the Zookeeper project spec version
         Hidden = true
-
-        [[[parameter StageResources]]]
-        Label = Stage Resources
-        DefaultValue = true
-        Description = whether or not to stage resources
-        Hidden = true
-
 
      [[parameters Zookeeper]]
      Description = Adjust the ZooKeeper cluster size.  Ensemble Size >= 3 required for fault tolerance (max: 10).
@@ -91,17 +98,24 @@ Order = 40
     Description = "The cluster, in this case, has two roles: the return proxy node and the zookeeper ensemble hosts. Configure which instance types to use based on the requirements of your application.  The proxy host may be used to enable firewall traversal between the cluster and CycleCloud.   In VPC environments with virtual network, this node is not required."
     Order = 10
 
-       [[[parameter ProxyMachineType]]]
-       Label = Proxy
-       Description = The machine type for the optional proxy host
-       ParameterType = Cloud.MachineType
-       DefaultValue = Standard_A2
+        [[[parameter ProxyMachineType]]]
+        Label = Proxy
+        Description = The machine type for the optional proxy host
+        ParameterType = Cloud.MachineType
+            [[[[record Config.ProviderDefaults]]]]
+            AWS = m3.large 
+            Azure = Standard_A2_v2
+            GCP = n1-standard-4
+
 
        [[[parameter EnsembleMachineType]]]
        Label = ZooKeeper
        Description = The machine type for the ZooKeeper members
        ParameterType = Cloud.MachineType
-       DefaultValue = Standard_DS4_v2 
+           [[[[record Config.ProviderDefaults]]]]
+           AWS = m3.large 
+           Azure = Standard_DS4_v2 
+           GCP = n1-standard-4
 
     [[parameter EnableTerminationProtection]]
     Label = Term Protection
@@ -109,24 +123,71 @@ Order = 40
     Widget.Plugin = pico.form.BooleanCheckBox
     Widget.Label = Enable Termination Protection?
 
+    [[parameter EnsembleGcpTagList]]
+    Label = Tag List
+    ParameterType = StringList
+    Conditions.Excluded := CloudProvider !== "GCP"
+    
+    [[parameter ZookeeperAccessArn]]
+    Label = IAM Profile
+    DefaultValue := undefined
+    Conditions.Excluded := CloudProvider !== "AWS"
+
 
 [parameters Networking]
 Order = 50
 
+    [[parameters AWS]]
+    Order = 20
+    Conditions.Excluded := CloudProvider !== "AWS"
+    Description = "Optional use of VPC components. Without specifying a subnet or security group the hosts will be started in the default region, VPC and security group."
+    
+        [[[parameter AwsProxySubnetId]]]
+        Label = Proxy Subnet
+        ParameterType = AWS.Subnet
+        Description = The subnet ID to use when in a VPC environment.
+        Conditions.Excluded := CloudProvider !== "AWS"
+
+        [[[parameter AwsSubnetId]]]
+        Label = VPC Subnets
+        ParameterType = AWS.Subnet
+        AutoSelect = true
+        Description = The subnet ID to use when in a VPC environment.
+        Conditions.Excluded := CloudProvider !== "AWS"
+
+        [[[parameter ZookeeperSecurityGroups]]]
+        Label = VPC Security Group
+        Description = "The security group ID(s) to use when in a VPC environment. Can be comma-separated list for multiple security groups. eg: sg-a0000001, sg-a0000002."
+        ParameterType = AWS.SecurityGroupList
 
     [[parameters Azure Virtual Network Configuration]]
     Order = 40
+    Conditions.Excluded := CloudProvider !== "Azure"
 
         [[[parameter AzureSubnetId]]]
         Label = Subnet ID
         Description = Subnet Resource Path (ResourceGroup/VirtualNetwork/Subnet)
         ParameterType = Azure.Subnet
+        Conditions.Required := CloudProvider === "Azure"
+        Conditions.Excluded := CloudProvider !== "Azure"
 
-    [[parameter ExecuteNodesPublic]]
+    [[parameters Google Compute Network Configuration]]
+    Order = 40
+    Description = No custom configuration required.
+    Conditions.Excluded := CloudProvider !== "GCP"
+
+    [[[parameter UsePublicNetwork]]]
+    Label = Public Networking
+    DefaultValue = true
+    ParameterType = Boolean
+    Config.Label = Allow access from the Internet
+
+    [[[parameter ExecuteNodesPublic]]]
     Label = Public Execute
     DefaultValue = false
-    Widget.Plugin = pico.form.BooleanCheckBox
-    Widget.Label = Make the Zookeeper ensemble members accessible from the Internet
+    ParameterType = Boolean
+    Config.Label = Make the Zookeeper ensemble members accessible from the Internet
+    Conditions.Excluded := UsePublicNetwork isnt true
 
 
 [cluster Zookeeper]
@@ -136,31 +197,36 @@ IconUrl = static/cloud/cluster/ui/ClusterIcon/zookeeper-icon.png
      [[node defaults]]
      TerminationProtection = $EnableTerminationProtection
      ImageName = $ImageName
-     StageResources = $StageResources
+     UsePublicNetwork = $UsePublicNetwork
+
      # Chef and Locker Config
      Credentials = $Credentials
+
+     # EC2
+     AWS.InstanceProfileArn=$ZookeeperAccessArn
+     KeyPair = $AwsKeypair
      KeyPairLocation = $KeypairLocation
+     SecurityGroups = $ZookeeperSecurityGroups
 
-     SubnetId = $AzureSubnetId
-     Region = $Location
+     SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsSubnetId)}
 
-         [[[configuration]]]
-         cyclecloud.discoverable = true
-	 zookeeper.ensemble_size = $EnsembleSize
-         zookeeper.mode = ensemble
+     # Azure
+     Region = $Region
 
          [[[cluster-init zookeeper:default:$ProjectVersion]]]
          # Cycle Common Repository
-         Locker = cyclecloud
+         Locker=cyclecloud
 
      [[node proxy]]
      IsReturnProxy = true
      MachineType = $ProxyMachineType
-     SubnetId = $AzureSubnetId
+     SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsProxySubnetId)}
 
-     [[[configuration]]]
-     run_list = recipe[cganglia::client], recipe[cganglia::server]
-     
+         [[[configuration]]]
+         run_list = recipe[cganglia::client], recipe[cganglia::server]
+
+         cyclecloud.discoverable = true
+         
          # Configure Azure external input endpoints (for example SSH)
          [[[input-endpoint SSH]]]
          PrivatePort = 22
@@ -168,23 +234,28 @@ IconUrl = static/cloud/cluster/ui/ClusterIcon/zookeeper-icon.png
 
          [[[input-endpoint ganglia]]]
          PrivatePort = 8652
-         PublicPort = 8652        
-
+         PublicPort = 8652
+         
          [[[cluster-init zookeeper:proxy:$ProjectVersion]]]
          [[[cluster-init zookeeper:client:$ProjectVersion]]]
          # Cycle Common Repository
-         Locker = cyclecloud
+         Locker=cyclecloud
 
 
      [[nodearray ensemble]]
      MachineType = $EnsembleMachineType
      InitialCount = $EnsembleSize
 
-     [[[configuration]]]
-     run_list = recipe[cganglia::client]
+     TagList = $EnsembleGcpTagList
 
          [[[network-interface]]]
          AssociatePublicIpAddress = $ExecuteNodesPublic
+
+         [[[configuration]]]
+	 run_list = recipe[cganglia::client]
+
+	 cyclecloud.discoverable = true
+	 zookeeper.ensemble_size = $EnsembleSize
 
 	 # Configure Azure external input endpoints (for example SSH)
 	 [[[input-endpoint SSH]]]
@@ -193,4 +264,4 @@ IconUrl = static/cloud/cluster/ui/ClusterIcon/zookeeper-icon.png
 
 	 [[[cluster-init zookeeper:server:$ProjectVersion]]]
 	 # Cycle Common Repository
-         Locker = cyclecloud
+	 Locker=cyclecloud
