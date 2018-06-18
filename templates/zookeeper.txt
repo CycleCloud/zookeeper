@@ -28,14 +28,6 @@ Order = 10
     Description = "Specify the credentials required for access to the node.  The Keypair Path specifies the path on local machines for cyclecloud CLI access."
     Order = 20
 
-        [[[parameter awsKeypair]]]
-        Label = AWS Keypair
-        Description = The keypair to connect with
-        ParameterType = AWS.Keypair
-        DefaultValue = cyclecloud
-        Conditions.Required := CloudProvider === "AWS"
-        Conditions.Excluded := CloudProvider !== "AWS"
-
         [[[parameter keypairLocation]]]
         Label = Keypair Path
         Description = The path to the keypair
@@ -103,9 +95,7 @@ Order = 40
         Description = The machine type for the optional proxy host
         ParameterType = Cloud.MachineType
             [[[[record Config.ProviderDefaults]]]]
-            AWS = m3.large 
             Azure = Standard_A2_v2
-            GCP = n1-standard-4
 
 
        [[[parameter EnsembleMachineType]]]
@@ -113,52 +103,10 @@ Order = 40
        Description = The machine type for the ZooKeeper members
        ParameterType = Cloud.MachineType
            [[[[record Config.ProviderDefaults]]]]
-           AWS = m3.large 
            Azure = Standard_DS4_v2 
-           GCP = n1-standard-4
-
-    [[parameter EnableTerminationProtection]]
-    Label = Term Protection
-    DefaultValue = false
-    Widget.Plugin = pico.form.BooleanCheckBox
-    Widget.Label = Enable Termination Protection?
-
-    [[parameter EnsembleGcpTagList]]
-    Label = Tag List
-    ParameterType = StringList
-    Conditions.Excluded := CloudProvider !== "GCP"
-    
-    [[parameter ZookeeperAccessArn]]
-    Label = IAM Profile
-    DefaultValue := undefined
-    Conditions.Excluded := CloudProvider !== "AWS"
-
 
 [parameters Networking]
 Order = 50
-
-    [[parameters AWS]]
-    Order = 20
-    Conditions.Excluded := CloudProvider !== "AWS"
-    Description = "Optional use of VPC components. Without specifying a subnet or security group the hosts will be started in the default region, VPC and security group."
-    
-        [[[parameter AwsProxySubnetId]]]
-        Label = Proxy Subnet
-        ParameterType = AWS.Subnet
-        Description = The subnet ID to use when in a VPC environment.
-        Conditions.Excluded := CloudProvider !== "AWS"
-
-        [[[parameter AwsSubnetId]]]
-        Label = VPC Subnets
-        ParameterType = AWS.Subnet
-        AutoSelect = true
-        Description = The subnet ID to use when in a VPC environment.
-        Conditions.Excluded := CloudProvider !== "AWS"
-
-        [[[parameter ZookeeperSecurityGroups]]]
-        Label = VPC Security Group
-        Description = "The security group ID(s) to use when in a VPC environment. Can be comma-separated list for multiple security groups. eg: sg-a0000001, sg-a0000002."
-        ParameterType = AWS.SecurityGroupList
 
     [[parameters Azure Virtual Network Configuration]]
     Order = 40
@@ -171,23 +119,18 @@ Order = 50
         Conditions.Required := CloudProvider === "Azure"
         Conditions.Excluded := CloudProvider !== "Azure"
 
-    [[parameters Google Compute Network Configuration]]
-    Order = 40
-    Description = No custom configuration required.
-    Conditions.Excluded := CloudProvider !== "GCP"
+        [[[parameter UsePublicNetwork]]]
+        Label = Public Networking
+        DefaultValue = true
+        ParameterType = Boolean
+        Config.Label = Allow access from the Internet
 
-    [[[parameter UsePublicNetwork]]]
-    Label = Public Networking
-    DefaultValue = true
-    ParameterType = Boolean
-    Config.Label = Allow access from the Internet
-
-    [[[parameter ExecuteNodesPublic]]]
-    Label = Public Execute
-    DefaultValue = false
-    ParameterType = Boolean
-    Config.Label = Make the Zookeeper ensemble members accessible from the Internet
-    Conditions.Excluded := UsePublicNetwork isnt true
+        [[[parameter ExecuteNodesPublic]]]
+        Label = Public Execute
+        DefaultValue = false
+        ParameterType = Boolean
+        Config.Label = Make the Zookeeper ensemble members accessible from the Internet
+        Conditions.Excluded := UsePublicNetwork isnt true
 
 
 [cluster Zookeeper]
@@ -195,32 +138,19 @@ FormLayout = selectionpanel
 IconUrl = static/cloud/cluster/ui/ClusterIcon/zookeeper-icon.png
 
      [[node defaults]]
-     TerminationProtection = $EnableTerminationProtection
      ImageName = $ImageName
      UsePublicNetwork = $UsePublicNetwork
-
-     # Chef and Locker Config
      Credentials = $Credentials
-
-     # EC2
-     AWS.InstanceProfileArn=$ZookeeperAccessArn
-     KeyPair = $AwsKeypair
      KeyPairLocation = $KeypairLocation
-     SecurityGroups = $ZookeeperSecurityGroups
-
-     SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsSubnetId)}
-
-     # Azure
+     SubnetId = $AzureSubnetId
      Region = $Region
 
-         [[[cluster-init zookeeper:default:$ProjectVersion]]]
-         # Cycle Common Repository
-         Locker=cyclecloud
+         [[[cluster-init cyclecloud/zookeeper:default:$ProjectVersion]]]
 
      [[node proxy]]
      IsReturnProxy = true
      MachineType = $ProxyMachineType
-     SubnetId = ${IfThenElse(CloudProvider==="Azure", AzureSubnetId, AwsProxySubnetId)}
+     SubnetId = $AzureSubnetId
 
          [[[configuration]]]
          run_list = recipe[cganglia::client], recipe[cganglia::server]
@@ -236,32 +166,26 @@ IconUrl = static/cloud/cluster/ui/ClusterIcon/zookeeper-icon.png
          PrivatePort = 8652
          PublicPort = 8652
          
-         [[[cluster-init zookeeper:proxy:$ProjectVersion]]]
-         [[[cluster-init zookeeper:client:$ProjectVersion]]]
-         # Cycle Common Repository
-         Locker=cyclecloud
+         [[[cluster-init cyclecloud/zookeeper:proxy:$ProjectVersion]]]
+         [[[cluster-init cyclecloud/zookeeper:client:$ProjectVersion]]]
 
 
      [[nodearray ensemble]]
      MachineType = $EnsembleMachineType
      InitialCount = $EnsembleSize
 
-     TagList = $EnsembleGcpTagList
-
          [[[network-interface]]]
          AssociatePublicIpAddress = $ExecuteNodesPublic
 
          [[[configuration]]]
-	 run_list = recipe[cganglia::client]
+	    run_list = recipe[cganglia::client]
 
-	 cyclecloud.discoverable = true
-	 zookeeper.ensemble_size = $EnsembleSize
+        cyclecloud.discoverable = true
+        zookeeper.ensemble_size = $EnsembleSize
 
 	 # Configure Azure external input endpoints (for example SSH)
 	 [[[input-endpoint SSH]]]
 	 PrivatePort = 22
 	 PublicPort = 55100
 
-	 [[[cluster-init zookeeper:server:$ProjectVersion]]]
-	 # Cycle Common Repository
-	 Locker=cyclecloud
+	 [[[cluster-init cyclecloud/zookeeper:server:$ProjectVersion]]]
