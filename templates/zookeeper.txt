@@ -72,7 +72,7 @@ Description = Specify the scheduling software, and base OS installed on all node
 
         [[[parameter ProjectVersion]]]
         Label = Project Version
-        DefaultValue = 1.4.0
+        DefaultValue = 1.5.0
         Description = Select the Zookeeper project spec version
         Hidden = true
 
