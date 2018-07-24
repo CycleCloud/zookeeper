@@ -54,9 +54,9 @@ IconUrl = static/cloud/cluster/ui/ClusterIcon/zookeeper-icon.png
 [parameters About]
 Order = 1
 
-    [[parameters About Anaconda]]
+    [[parameters About Zookeeper]]
 
-        [[[parameter Conda]]]
+        [[[parameter ZK]]]
         HideLabel = true
         Config.Plugin = pico.widget.HtmlTemplateWidget
         Config.Template := "<table><tr><td><img src='https://github.com/CycleCloud/zookeeper/raw/master/icon.png' width='192' height='192'></td></tr><tr><td><p>This cluster installs a basic Zookeeper ensemble.</p><br><p>See the <a href=\"https://zookeeper.apache.org/\" target=\"_blank\">Zookeeper project site</a> for an overview.</p></td></tr></table>"
