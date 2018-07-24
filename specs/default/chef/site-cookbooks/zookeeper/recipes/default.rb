@@ -8,7 +8,16 @@
 #
 
 include_recipe 'cyclecloud'
-include_recipe 'ark'
+
+mirror = "http://apache.mirrors.tds.net/zookeeper/"
+version = '3.4.12'
+checksum = 'c686f9319050565b58e642149cb9e4c9cc8c7207aacc2cb70c5c0672849594b9'
+zk_tarball = "zookeeper-#{version}.tar.gz"
+zk_url = "#{mirror}/zookeeper-#{version}/#{zk_tarball}"
+
+zookeeper_home = '/opt/zookeeper/current'
+zookeeper_prefix = File.dirname(zookeeper_home)
+zookeeper_install_path = "#{zookeeper_prefix}/zookeeper-#{version}"
 
 heap_size = ZooKeeper::Helpers.heap_size(node['memory']['total'])
 
@@ -19,11 +28,6 @@ user 'zookeeper' do
   shell '/bin/bash'
 end
 
-mirror = "http://apache.mirrors.tds.net/zookeeper/"
-version = '3.4.12'
-checksum = 'c686f9319050565b58e642149cb9e4c9cc8c7207aacc2cb70c5c0672849594b9'
-zk_url = "#{mirror}/zookeeper-#{version}/zookeeper-#{version}.tar.gz"
-
 %w{ /opt/zookeeper /opt/zookeeper/logs }.each do |dir|
   directory dir do
     owner 'zookeeper'
@@ -32,26 +36,37 @@ zk_url = "#{mirror}/zookeeper-#{version}/zookeeper-#{version}.tar.gz"
   end
 end
 
-ark 'zookeeper' do
-  url zk_url
-  version version
-  prefix_root '/opt/zookeeper'
-  home_dir '/opt/zookeeper/current'
+zookeeper_installer_path = "#{Chef::Config[:file_cache_path]}/#{zk_tarball}"
+remote_file zookeeper_installer_path do
+  source zk_url
   checksum checksum
-  owner 'zookeeper'
-  group 'zookeeper'
+  mode 0755
+  not_if { ::File.exists?(zookeeper_installer_path) }
+  action :create_if_missing
 end
 
-link '/opt/zookeeper/current' do
-  to "/opt/zookeeper/zookeeper-#{version}"
-  owner 'zookeeper'
-  not_if { ::File.exists?('/opt/zookeeper/current') }
+directory zookeeper_prefix do
+  mode 0755
+  recursive true
 end
 
-link '/opt/zookeeper/current/logs' do
-  to '/opt/zookeeper/logs'
+# See: https://conda.io/docs/user-guide/install/macos.html#install-macos-silent
+execute 'extract zookeeper' do
+  command "tar xzf #{zookeeper_installer_path} -C #{zookeeper_prefix}"
+  not_if { File.directory?(zookeeper_home) }
+end
+
+
+link zookeeper_home do
+  to zookeeper_install_path
   owner 'zookeeper'
-  not_if { ::File.exists?('/opt/zookeeper/current/logs') }
+  not_if { ::File.exists?(zookeeper_home) }
+end
+
+link "#{zookeeper_home}/logs" do
+  to "#{zookeeper_prefix}/logs"
+  owner 'zookeeper'
+  not_if { ::File.exists?("#{zookeeper_prefix}/logs") }
 end
 
 directory '/etc/zookeeper' do
@@ -64,8 +79,8 @@ template '/etc/zookeeper/log4j.properties' do
   owner 'zookeeper'
 end
 
-link '/opt/zookeeper/current/conf/log4j.properties' do
+link "#{zookeeper_home}/conf/log4j.properties" do
   to '/etc/zookeeper/log4j.properties'
   owner 'zookeeper'
-  not_if { ::File.exists?('/opt/zookeeper/current/conf/log4j.properties') }
+  not_if { ::File.exists?("#{zookeeper_home}/conf/log4j.properties") }
 end
